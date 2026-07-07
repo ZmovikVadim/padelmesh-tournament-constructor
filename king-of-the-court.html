@@ -255,6 +255,11 @@
           <datalist id="clubs-datalist"></datalist>
           <div class="hint" data-i18n="setup.club.hint">Скоро — выбор из «Моих клубов»</div>
         </div>
+        <div style="grid-column: 1 / -1;">
+          <label for="t-paylink" data-i18n="setup.payLink.label">Ссылка для оплаты</label>
+          <input type="text" id="t-paylink" data-i18n-ph="setup.payLink.ph" placeholder="Например, ссылка Tikkie или PayPal (необязательно)" maxlength="300" inputmode="url">
+          <div class="hint" data-i18n="setup.payLink.hint">Необязательно. Будет видна всем, у кого есть ссылка на турнир.</div>
+        </div>
       </div>
       <div class="settings-grid">
         <div>
@@ -301,6 +306,8 @@
   <div id="tournament-view" class="hidden">
     <h1 id="t-title">Турнир King of the Court</h1>
     <p class="subtitle" id="t-subtitle"></p>
+
+    <a id="paylink-anchor" class="btn paylink-btn hidden" href="#" target="_blank" rel="noopener noreferrer" data-i18n="t.payLink.button">💳 Оплатить участие</a>
 
     <div class="round-tabs" id="round-tabs"></div>
     <div id="rounds-container"></div>
@@ -370,6 +377,15 @@
   const T = (k, v) => window.PMI18N ? PMI18N.t(k, v) : k;
   const fname = () => window.PMI18N ? PMI18N.formatName(FMT) : 'King of the Court';
   const defaultTitle = () => T('t.defaultTitle', { format: fname() });
+
+  // Ссылка оплаты: разрешаем только http/https (защита от javascript:/data: в share-ссылке)
+  function safeUrl(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return ''; // прочие схемы запрещены
+    return 'https://' + u;                          // голый домен → https
+  }
 
   const STORE_KEY = 'padelmesh_tournaments_v1';   // shared store: { id: tournamentState }
   let state = null; // { id, type, finished, players[], courts[], rounds, matchPoints, schedule[][], scores{}, paid{} }
@@ -586,6 +602,7 @@
       date: tDateInput.value,
       time: tTimeInput.value,
       club: document.getElementById('t-club').value.trim(),
+      payLink: safeUrl(document.getElementById('t-paylink').value),
       players, courts, rounds,
       matchPoints: +matchPointsSel.value,
       schedule: [generateFirstRound(n)],
@@ -630,12 +647,22 @@
     document.getElementById('crumb-current').textContent = state.name || defaultTitle();
     document.getElementById('t-title').textContent = state.name || defaultTitle();
     document.getElementById('t-subtitle').textContent = buildSubtitle();
+    renderPayLink();
     if (readOnly) {
       document.getElementById('t-actions').classList.add('hidden');
     }
     renderTabs();
     renderRound();
     renderLeaderboard();
+  }
+
+  // Кнопка-ссылка оплаты: видна всем (организатору и по внешней ссылке), если задана
+  function renderPayLink() {
+    const a = document.getElementById('paylink-anchor');
+    if (!a) return;
+    const url = safeUrl(state && state.payLink);
+    if (url) { a.href = url; a.classList.remove('hidden'); }
+    else { a.removeAttribute('href'); a.classList.add('hidden'); }
   }
 
   function roundComplete(r) {
@@ -1108,6 +1135,7 @@
   function sharePayload() {
     return {
       name: state.name, club: state.club, date: state.date, time: state.time,
+      payLink: state.payLink || '',
       players: state.players, courts: state.courts, rounds: state.rounds,
       matchPoints: state.matchPoints, schedule: state.schedule,
       scores: state.scores, currentRound: 0

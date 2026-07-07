@@ -89,6 +89,10 @@
       'setup.club': 'Клуб',
       'setup.club.ph': 'Название клуба (можно пропустить)',
       'setup.club.hint': 'Скоро — выбор из «Моих клубов»',
+      'setup.payLink.label': 'Ссылка для оплаты',
+      'setup.payLink.ph': 'Например, ссылка Tikkie или PayPal (необязательно)',
+      'setup.payLink.hint': 'Необязательно. Будет видна всем, у кого есть ссылка на турнир.',
+      't.payLink.button': '💳 Оплатить участие',
       'setup.players': 'Игроков',
       'setup.pairs': 'Пар',
       'setup.rounds': 'Раундов',
@@ -286,6 +290,10 @@
       'setup.club': 'Club',
       'setup.club.ph': 'Club name (optional)',
       'setup.club.hint': 'Coming soon — pick from «My clubs»',
+      'setup.payLink.label': 'Payment link',
+      'setup.payLink.ph': 'e.g. a Tikkie or PayPal link (optional)',
+      'setup.payLink.hint': 'Optional. Visible to anyone who has the tournament link.',
+      't.payLink.button': '💳 Pay the entry',
       'setup.players': 'Players',
       'setup.pairs': 'Pairs',
       'setup.rounds': 'Rounds',
@@ -475,6 +483,10 @@
       'setup.club': 'Club',
       'setup.club.ph': 'Nombre del club (opcional)',
       'setup.club.hint': 'Próximamente: elige de «Mis clubes»',
+      'setup.payLink.label': 'Enlace de pago',
+      'setup.payLink.ph': 'p. ej., un enlace de Tikkie o PayPal (opcional)',
+      'setup.payLink.hint': 'Opcional. Visible para cualquiera que tenga el enlace del torneo.',
+      't.payLink.button': '💳 Pagar la inscripción',
       'setup.players': 'Jugadores',
       'setup.pairs': 'Parejas',
       'setup.rounds': 'Rondas',
@@ -865,7 +877,10 @@
       '.player-rounds .rp-pts{font-weight:600;color:var(--color-orange,#ff5734);text-align:right;white-space:nowrap;}' +
       '.player-rounds .rp-win{color:var(--color-dark-green,#00695b);font-weight:600;}' +
       '.player-rounds .rp-loss{color:var(--color-black-40,rgba(32,33,38,.4));}' +
-      '.player-rounds .rp-rest{color:var(--color-black-40,rgba(32,33,38,.4));font-style:italic;}';
+      '.player-rounds .rp-rest{color:var(--color-black-40,rgba(32,33,38,.4));font-style:italic;}' +
+      /* кнопка-ссылка «Оплатить участие» */
+      'a.paylink-btn{text-decoration:none;margin:2px 0 20px;}' +
+      '.paylink-btn.hidden{display:none;}';
     document.head.appendChild(st);
   }
 
