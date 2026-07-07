@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title data-i18n="index.title">Турниры — Padelmesh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="i18n.js"></script>
+<style>
+  /* Light palette from padelmesh.com */
+  :root {
+    --color-white: #ffffff;
+    --color-black: #202126;
+    --color-black-60: rgba(32, 33, 38, 0.6);
+    --color-black-40: rgba(32, 33, 38, 0.4);
+    --color-black-10: rgba(32, 33, 38, 0.1);
+    --color-black-5: rgba(32, 33, 38, 0.05);
+    --color-black-3: rgba(32, 33, 38, 0.03);
+    --color-orange: #ff5734;
+    --color-light-orange: #fde0d5;
+    --color-blue: #2d3eca;
+    --color-light-blue: #e8e1ff;
+    --color-dark-green: #00695b;
+    --color-light-green: #bfffc2;
+    --color-yellow: #daee38;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--color-white);
+    color: var(--color-black);
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .logo { font-size: 21px; font-weight: 600; letter-spacing: 0.3px; }
+  .logo span { color: var(--color-orange); }
+  .badge {
+    background: var(--color-yellow); color: var(--color-black); font-weight: 600;
+    padding: 5px 14px; border-radius: 20px; font-size: 13px;
+  }
+
+  h1 { font-size: 30px; font-weight: 600; margin-bottom: 6px; line-height: 1.25; }
+  h1 em { font-style: normal; color: var(--color-orange); }
+  .subtitle { color: var(--color-black-60); font-size: 15px; margin-bottom: 28px; max-width: 640px; line-height: 1.6; }
+
+  .card {
+    background: var(--color-white); border: 1px solid var(--color-black-10);
+    border-radius: 20px; padding: 22px; margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(32, 33, 38, 0.05);
+  }
+  .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+
+  .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+  .full-row { grid-column: 1 / -1; }
+  label { display: block; font-size: 12.5px; color: var(--color-black-60); margin-bottom: 6px; font-weight: 500; }
+  select, input[type="text"], input[type="date"], input[type="time"] {
+    width: 100%; background: var(--color-black-3); border: 1px solid var(--color-black-10);
+    border-radius: 14px; color: var(--color-black); padding: 10px 14px; font-size: 15px;
+    font-family: inherit; outline: none; transition: border-color .15s;
+    color-scheme: light;
+  }
+  select:focus, input:focus { border-color: var(--color-orange); }
+  input::placeholder { color: var(--color-black-40); }
+  input[type="date"], input[type="time"] { cursor: pointer; min-height: 45px; }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer; opacity: .5; transition: opacity .15s;
+  }
+  input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  input[type="time"]:hover::-webkit-calendar-picker-indicator { opacity: 1; }
+  .hint { font-size: 12px; color: var(--color-black-60); margin-top: 6px; }
+
+  /* Tournament type chips: americano column left, mexicano column right,
+     king of the court + round robin centered below */
+  .type-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .type-chips .type-chip { width: 100%; text-align: center; }
+  .chips-bottom-row {
+    grid-column: 1 / -1; display: flex; justify-content: center;
+    gap: 8px; flex-wrap: wrap;
+  }
+  .chips-bottom-row .type-chip { width: auto; }
+  .type-chip {
+    padding: 9px 16px; border-radius: 14px;
+    border: 1px solid var(--color-black-10); background: var(--color-black-3);
+    color: var(--color-black-40); /* grey text for unselected */
+    font-size: 13.5px; font-weight: 500; font-family: inherit; cursor: pointer;
+    transition: all .15s;
+  }
+  .type-chip:hover { border-color: var(--color-orange); color: var(--color-black-60); }
+  .type-chip.active {
+    background: var(--color-orange); border-color: var(--color-orange);
+    color: var(--color-white); font-weight: 600;
+  }
+  .type-chip .soon-mark { font-size: 11px; opacity: .7; margin-left: 4px; }
+
+  /* Selected type description under the form */
+  .type-desc {
+    background: var(--color-black-3); border: 1px solid var(--color-black-10);
+    border-left: 3px solid var(--color-orange);
+    border-radius: 16px; padding: 14px 18px; margin-top: 18px;
+    font-size: 13.5px; line-height: 1.65; color: var(--color-black-60);
+  }
+  .type-desc b { color: var(--color-black); font-weight: 600; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--color-orange); color: var(--color-white); border: none; cursor: pointer;
+    padding: 14px 28px; border-radius: 20px; font-size: 15px; font-weight: 600;
+    font-family: inherit; transition: opacity .15s, transform .1s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:active { transform: scale(.98); }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; align-items: center; }
+  .error-msg { color: var(--color-orange); font-size: 14px; margin-top: 12px; display: none; }
+
+  .section-title { font-size: 20px; font-weight: 600; margin: 36px 0 6px; }
+  .section-sub { color: var(--color-black-60); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+
+  /* Schedule-mode tags in the type description */
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 10px; white-space: nowrap;
+    vertical-align: 1px; margin-left: 4px;
+  }
+  .tag.upfront { background: var(--color-light-green); color: var(--color-dark-green); }
+  .tag.progressive { background: var(--color-light-blue); color: var(--color-blue); }
+
+  /* Layout with right-side menu */
+  .layout { display: flex; gap: 24px; align-items: flex-start; }
+  .content { flex: 1; min-width: 0; }
+  .side-menu {
+    width: 230px; flex-shrink: 0; position: sticky; top: 24px;
+    order: -1; /* menu on the left; revisit when the site's account layout is ready */
+    display: flex; flex-direction: column; gap: 6px;
+    background: var(--color-white); border: 1px solid var(--color-black-10);
+    border-radius: 20px; padding: 10px;
+    box-shadow: 0 4px 20px rgba(32, 33, 38, 0.05);
+  }
+  .menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: 14px; border: none; background: none;
+    cursor: pointer; font-size: 14px; font-weight: 500; font-family: inherit;
+    color: var(--color-black-60); text-align: left; transition: all .15s;
+  }
+  .menu-item:hover { background: var(--color-black-3); color: var(--color-black); }
+  .menu-item.active { background: var(--color-orange); color: var(--color-white); font-weight: 600; }
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; }
+    .side-menu { width: 100%; flex-direction: row; position: static; flex-wrap: wrap; }
+    .menu-item { flex: 1; justify-content: center; text-align: center; }
+  }
+
+  /* My tournaments */
+  .hidden { display: none; }
+  .group-title { font-size: 14px; font-weight: 600; color: var(--color-black-60); margin: 14px 0 10px; }
+  .tournaments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .t-card {
+    background: var(--color-white); border: 1px solid var(--color-black-10);
+    border-radius: 20px; padding: 16px 18px; cursor: pointer;
+    transition: border-color .15s, transform .12s, box-shadow .15s;
+    display: flex; flex-direction: column; gap: 6px; position: relative;
+  }
+  .t-card:hover { border-color: var(--color-orange); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(32, 33, 38, 0.08); }
+  .t-name { font-size: 15px; font-weight: 600; padding-right: 28px; }
+  .t-meta { font-size: 12.5px; color: var(--color-black-60); line-height: 1.5; }
+  .t-status { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 10px; }
+  .t-status.progress { background: var(--color-light-blue); color: var(--color-blue); }
+  .t-status.done { background: var(--color-light-green); color: var(--color-dark-green); }
+  .t-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+  .btn-delete {
+    border: 1px solid var(--color-black-10); background: none; color: var(--color-orange);
+    border-radius: 10px; padding: 5px 12px; font-size: 12px; font-weight: 500;
+    font-family: inherit; cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .btn-delete:hover { background: var(--color-light-orange); border-color: var(--color-orange); }
+  .btn-edit {
+    border: 1px solid var(--color-black-10); background: none; color: var(--color-blue);
+    border-radius: 10px; padding: 5px 12px; font-size: 12px; font-weight: 500;
+    font-family: inherit; cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .btn-edit:hover { background: var(--color-light-blue); border-color: var(--color-blue); }
+
+  /* Confirmation modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(32, 33, 38, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 16px;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--color-white); border-radius: 20px; padding: 28px 24px 22px;
+    max-width: 420px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px rgba(32, 33, 38, 0.25);
+  }
+  .modal .modal-icon { font-size: 36px; margin-bottom: 8px; }
+  .modal h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .modal p { font-size: 13.5px; color: var(--color-black-60); line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+  .btn.secondary { background: var(--color-black-5); color: var(--color-black); font-weight: 500; }
+  .btn.secondary:hover { background: var(--color-black-10); opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">Padel<span>Mesh</span></div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="lang-switch" data-lang-switch></div>
+      <div class="badge" data-i18n="badge.tournaments">Турниры</div>
+    </div>
+  </header>
+
+  <div class="layout">
+  <div class="content">
+
+  <!-- ===== Section: create tournament ===== -->
+  <section id="section-create">
+  <h1 data-i18n-html="index.h1">Создай свой <em>падел-турнир</em> за минуту</h1>
+  <p class="subtitle" data-i18n="index.subtitle">Выбери формат, укажи участников — и получи готовые сетки на каждый корт и каждый раунд. Счёт, таблица лидеров и ссылка для зрителей уже внутри.</p>
+
+  <div class="card">
+    <h2 data-i18n="index.newT">Новый турнир</h2>
+    <div class="settings-grid">
+      <div class="full-row">
+        <label for="t-name" data-i18n="setup.name.label">Название турнира</label>
+        <input type="text" id="t-name" data-i18n-ph="index.name.ph" placeholder="Например: Пятничное Americano в Padel Club (можно пропустить)" maxlength="60">
+      </div>
+      <div class="full-row">
+        <label data-i18n="index.type.label">Тип турнира</label>
+        <div class="type-chips" id="type-chips"></div>
+        <div class="hint" data-i18n="index.type.hint">Дату, количество игроков и кортов выберете на следующем шаге</div>
+      </div>
+    </div>
+    <div class="type-desc" id="type-desc"></div>
+    <div class="error-msg" id="form-error"></div>
+    <div class="actions">
+      <button class="btn" id="btn-create" data-i18n="index.btn.create">Создать турнир →</button>
+    </div>
+  </div>
+
+  </section>
+
+  <!-- ===== Section: my clubs ===== -->
+  <section id="section-clubs" class="hidden">
+    <h1 data-i18n="index.clubs.h1">Мои клубы</h1>
+    <p class="subtitle" data-i18n="index.clubs.subtitle">Клубы, в которых вы проводите турниры. Названия появятся в подсказках поля «Клуб» при создании турнира. На проде раздел переедет в личный кабинет.</p>
+    <div class="card">
+      <label for="club-name" data-i18n="index.clubs.new">Новый клуб</label>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="club-name" data-i18n-ph="index.clubs.ph" placeholder="Название клуба" maxlength="60" style="flex: 1; min-width: 200px;">
+        <button class="btn" id="btn-add-club" data-i18n="index.clubs.add">+ Добавить</button>
+      </div>
+      <div class="error-msg" id="club-error"></div>
+    </div>
+    <div class="tournaments-grid" id="clubs-list"></div>
+    <p class="section-sub hidden" id="no-clubs" data-i18n="index.clubs.none">Пока нет клубов — добавьте первый.</p>
+  </section>
+
+  <!-- ===== Section: my tournaments ===== -->
+  <section id="section-tournaments" class="hidden">
+    <h1 data-i18n="index.tour.h1">Мои турниры</h1>
+    <p class="subtitle" data-i18n="index.tour.subtitle">Турниры сохраняются автоматически — можно вернуться и продолжить в любой момент. На проде раздел переедет в личный кабинет.</p>
+    <div id="active-block" class="hidden">
+      <div class="group-title" data-i18n="index.tour.current">Текущие</div>
+      <div class="tournaments-grid" id="active-list"></div>
+    </div>
+    <div id="finished-block" class="hidden">
+      <div class="group-title" data-i18n="index.tour.finished">Завершённые</div>
+      <div class="tournaments-grid" id="finished-list"></div>
+    </div>
+    <p class="section-sub hidden" id="no-tournaments" data-i18n="index.tour.none">Пока нет сохранённых турниров — создайте первый в разделе «Создать турнир».</p>
+  </section>
+
+  </div><!-- /.content -->
+
+  <!-- ===== Right-side menu ===== -->
+  <nav class="side-menu" id="side-menu">
+    <button class="menu-item active" data-section="create" data-i18n="index.menu.create">🎾 Создать турнир</button>
+    <button class="menu-item" data-section="clubs" data-i18n="index.menu.clubs">🏟️ Мои клубы</button>
+    <button class="menu-item" data-section="tournaments" data-i18n="index.menu.tournaments">🏆 Мои турниры</button>
+  </nav>
+
+  </div><!-- /.layout -->
+
+  <!-- Delete confirmation modal -->
+  <div class="modal-overlay hidden" id="confirm-modal">
+    <div class="modal">
+      <div class="modal-icon">🗑</div>
+      <h3 id="confirm-title"></h3>
+      <p id="confirm-message"></p>
+      <div class="modal-actions">
+        <button class="btn secondary" id="confirm-cancel" data-i18n="common.cancel">Отмена</button>
+        <button class="btn" id="confirm-ok" data-i18n="common.delete">🗑 Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Tournament formats ----------
+  // Отображаемые строки (name/subtitle/info/rules/meta) берутся из i18n.js
+  // по id формата — здесь только метаданные и логика.
+  const FORMATS = [
+    { id: 'classic-americano', page: 'americano.html',        ready: true, progressive: false },
+    { id: 'team-americano',    page: 'team-americano.html',   ready: true, progressive: false },
+    { id: 'mix-americano',     page: 'mix-americano.html',    ready: true, progressive: false },
+    { id: 'mexicano',          page: 'mexicano.html',         ready: true, progressive: true  },
+    { id: 'team-mexicano',     page: 'team-mexicano.html',    ready: true, progressive: true  },
+    { id: 'mixicano',          page: 'mixicano.html',         ready: true, progressive: true  },
+    { id: 'king-of-the-court', page: 'king-of-the-court.html', ready: true, progressive: true },
+    { id: 'round-robin',       page: 'round-robin.html',      ready: true, progressive: false }
+  ];
+  const T = (k, v) => window.PMI18N ? PMI18N.t(k, v) : k;
+  const fname = id => window.PMI18N ? PMI18N.formatName(id) : id;
+
+  // ---------- Form init ----------
+  const typeChipsDiv = document.getElementById('type-chips');
+  const typeDesc = document.getElementById('type-desc');
+  let selectedType = FORMATS[0].id;
+
+  function makeTypeChip(id) {
+    const f = FORMATS.find(x => x.id === id);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'type-chip' + (selectedType === f.id ? ' active' : '');
+    chip.innerHTML = fname(f.id) + (f.ready ? '' : '<span class="soon-mark">' + T('index.soon') + '</span>');
+    chip.addEventListener('click', () => {
+      selectedType = f.id;
+      onTypeChange();
+    });
+    return chip;
+  }
+
+  function renderTypeChips() {
+    typeChipsDiv.innerHTML = '';
+    const col1 = ['classic-americano', 'team-americano', 'mix-americano'];   // americano — left
+    const col2 = ['mexicano', 'team-mexicano', 'mixicano'];                  // mexicano — right
+    const bottom = ['king-of-the-court', 'round-robin'];                     // centered below
+    for (let i = 0; i < 3; i++) {
+      typeChipsDiv.appendChild(makeTypeChip(col1[i]));
+      typeChipsDiv.appendChild(makeTypeChip(col2[i]));
+    }
+    const row = document.createElement('div');
+    row.className = 'chips-bottom-row';
+    bottom.forEach(id => row.appendChild(makeTypeChip(id)));
+    typeChipsDiv.appendChild(row);
+  }
+
+  function onTypeChange() {
+    const f = FORMATS.find(x => x.id === selectedType);
+    const tag = f.progressive
+      ? '<span class="tag progressive">' + T('index.tag.progressive') + '</span>'
+      : '<span class="tag upfront">' + T('index.tag.upfront') + '</span>';
+    typeDesc.innerHTML = '<b>' + fname(f.id) + '</b>' + tag + '<br>' + PMI18N.format(f.id, 'rules') +
+      ' <b>' + (f.progressive
+        ? T('index.next.progressive')
+        : T('index.next.upfront')) + '</b>' +
+      '<div style="margin-top: 6px; color: var(--color-black-40); font-size: 12px;">' + PMI18N.format(f.id, 'meta') + '</div>';
+    renderTypeChips();
+  }
+  onTypeChange();
+
+  // ---------- My tournaments ----------
+  const STORE_KEY = 'padelmesh_tournaments_v1';
+  // SQLite API (server.py); fallback to localStorage when the server is down
+  const API_URL = (location.protocol === 'http:' || location.protocol === 'https:')
+    ? location.origin + '/api/tournaments'
+    : 'http://localhost:8000/api/tournaments';
+
+  function loadStore() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  async function fetchStore() {
+    // Merge SQLite and localStorage, preferring the fresher copy of each
+    // tournament — so nothing disappears if one of the stores lags behind.
+    const local = loadStore();
+    try {
+      const r = await fetch(API_URL);
+      if (r.ok) {
+        const remote = await r.json();
+        const merged = Object.assign({}, local);
+        Object.entries(remote).forEach(([id, t]) => {
+          if (!merged[id] || (t.updatedAt || 0) >= (merged[id].updatedAt || 0)) merged[id] = t;
+        });
+        return merged;
+      }
+    } catch (e) {}
+    return local;
+  }
+
+  function formatDate(iso) {
+    return window.PMI18N ? PMI18N.formatDate(iso) : (iso || '');
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  // ---------- Delete confirmation modal ----------
+  const confirmModal = document.getElementById('confirm-modal');
+  let confirmAction = null;
+
+  function askConfirm(title, message, onConfirm) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    confirmAction = onConfirm;
+    confirmModal.classList.remove('hidden');
+  }
+  function closeConfirm() {
+    confirmModal.classList.add('hidden');
+    confirmAction = null;
+  }
+  document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+  confirmModal.addEventListener('click', e => {
+    if (e.target === confirmModal) closeConfirm();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeConfirm();
+  });
+  document.getElementById('confirm-ok').addEventListener('click', () => {
+    const action = confirmAction;
+    closeConfirm();
+    if (action) action();
+  });
+
+  function tournamentProgress(t) {
+    let total = 0, filled = 0;
+    (t.schedule || []).forEach((round, r) => {
+      round.forEach((_, c) => {
+        total++;
+        const sc = (t.scores || {})[r + '-' + c];
+        if (sc && sc[0] !== null && sc[1] !== null) filled++;
+      });
+    });
+    return { total, filled };
+  }
+
+  function typeName(t) {
+    return fname(t.type) || 'Classic Americano';
+  }
+
+  function typePage(t) {
+    const f = FORMATS.find(x => x.id === t.type);
+    return (f && f.page) ? f.page : 'americano.html';
+  }
+
+  async function renderMyTournaments() {
+    const store = await fetchStore();
+    const items = Object.values(store).filter(t => t && t.schedule);
+    items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const active = items.filter(t => !t.finished);
+    const finished = items.filter(t => t.finished);
+
+    document.getElementById('no-tournaments').classList.toggle('hidden', items.length > 0);
+    document.getElementById('active-block').classList.toggle('hidden', active.length === 0);
+    document.getElementById('finished-block').classList.toggle('hidden', finished.length === 0);
+
+    const fill = (listEl, list) => {
+      listEl.innerHTML = '';
+      list.forEach(t => {
+        const card = document.createElement('div');
+        card.className = 't-card';
+        const p = tournamentProgress(t);
+        const defName = t.name || T('t.defaultTitle', { format: typeName(t) });
+        const status = t.finished
+          ? '<span class="t-status done">' + T('index.card.finishedStatus') + '</span>'
+          : '<span class="t-status progress">' + T('index.card.playedStatus', { filled: p.filled, total: p.total }) + '</span>';
+        card.innerHTML =
+          '<div class="t-name">' + esc(defName) + '</div>' +
+          '<div class="t-meta">' + typeName(t) +
+            (t.club ? ' · ' + esc(t.club) : '') +
+            (t.date ? ' · ' + formatDate(t.date) + (t.time ? ', ' + t.time : '') : '') +
+            ' · ' + T('sub.players', { n: t.players.length }) + ' · ' + T('sub.rounds', { n: t.rounds }) + '</div>' +
+          '<div class="t-foot">' + status + '<button class="btn-delete">' + T('common.delete') + '</button></div>';
+        card.addEventListener('click', () => {
+          location.href = typePage(t) + '?id=' + encodeURIComponent(t.id);
+        });
+        card.querySelector('.btn-delete').addEventListener('click', e => {
+          e.stopPropagation();
+          askConfirm(T('index.card.delTitle'),
+            T('index.card.delMsg', { name: defName }),
+            () => {
+              fetch(API_URL + '/' + encodeURIComponent(t.id), { method: 'DELETE' }).catch(() => {});
+              const s = loadStore();
+              delete s[t.id];
+              try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (err) {}
+              renderMyTournaments();
+            });
+        });
+        listEl.appendChild(card);
+      });
+    };
+    fill(document.getElementById('active-list'), active);
+    fill(document.getElementById('finished-list'), finished);
+  }
+  renderMyTournaments();
+
+  // ---------- My clubs ----------
+  const CLUBS_KEY = 'padelmesh_clubs_v1';
+
+  function loadClubs() {
+    try { return JSON.parse(localStorage.getItem(CLUBS_KEY) || '[]') || []; } catch (e) { return []; }
+  }
+  function saveClubs(clubs) {
+    try { localStorage.setItem(CLUBS_KEY, JSON.stringify(clubs)); } catch (e) {}
+  }
+
+  let editingClub = -1; // index of the club being edited inline
+
+  function renderClubs() {
+    const clubs = loadClubs();
+    const list = document.getElementById('clubs-list');
+    list.innerHTML = '';
+    document.getElementById('no-clubs').classList.toggle('hidden', clubs.length > 0);
+    clubs.forEach((club, i) => {
+      const card = document.createElement('div');
+      card.className = 't-card';
+      card.style.cursor = 'default';
+
+      if (i === editingClub) {
+        // Inline edit mode
+        card.innerHTML =
+          '<label>' + T('index.clubs.editLabel') + '</label>' +
+          '<input type="text" class="club-edit-input" maxlength="60">' +
+          '<div class="error-msg club-edit-error"></div>' +
+          '<div class="t-foot" style="justify-content: flex-end;">' +
+          '<button class="btn-edit act-cancel">' + T('common.cancel') + '</button>' +
+          '<button class="btn-delete act-save" style="color: var(--color-dark-green);">' + T('common.save') + '</button></div>';
+        const inp = card.querySelector('.club-edit-input');
+        const errEl = card.querySelector('.club-edit-error');
+        inp.value = club;
+
+        const saveEdit = () => {
+          const name = inp.value.trim();
+          if (!name) { errEl.textContent = T('index.clubs.emptyErr'); errEl.style.display = 'block'; return; }
+          const c = loadClubs();
+          if (c.some((x, j) => j !== i && x.toLowerCase() === name.toLowerCase())) {
+            errEl.textContent = T('index.clubs.dupErr'); errEl.style.display = 'block'; return;
+          }
+          c[i] = name;
+          saveClubs(c);
+          editingClub = -1;
+          renderClubs();
+        };
+        card.querySelector('.act-save').addEventListener('click', saveEdit);
+        card.querySelector('.act-cancel').addEventListener('click', () => { editingClub = -1; renderClubs(); });
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') saveEdit();
+          if (e.key === 'Escape') { editingClub = -1; renderClubs(); }
+        });
+        list.appendChild(card);
+        inp.focus();
+        inp.select();
+        return;
+      }
+
+      card.innerHTML =
+        '<div class="t-name">🏟️ ' + esc(club) + '</div>' +
+        '<div class="t-foot"><span class="t-meta">' + T('index.clubs.cardMeta') + '</span>' +
+        '<span style="display: flex; gap: 6px;">' +
+        '<button class="btn-edit">' + T('index.clubs.edit') + '</button>' +
+        '<button class="btn-delete">' + T('common.delete') + '</button></span></div>';
+      card.querySelector('.btn-edit').addEventListener('click', () => {
+        editingClub = i;
+        renderClubs();
+      });
+      card.querySelector('.btn-delete').addEventListener('click', () => {
+        askConfirm(T('index.clubs.delTitle'),
+          T('index.clubs.delMsg', { name: club }),
+          () => {
+            const c = loadClubs();
+            c.splice(i, 1);
+            saveClubs(c);
+            if (editingClub === i) editingClub = -1;
+            renderClubs();
+          });
+      });
+      list.appendChild(card);
+    });
+  }
+
+  function addClub() {
+    const inp = document.getElementById('club-name');
+    const err = document.getElementById('club-error');
+    const name = inp.value.trim();
+    if (!name) return;
+    const clubs = loadClubs();
+    if (clubs.some(c => c.toLowerCase() === name.toLowerCase())) {
+      err.textContent = T('index.clubs.dupErr');
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    clubs.push(name);
+    saveClubs(clubs);
+    inp.value = '';
+    renderClubs();
+  }
+  document.getElementById('btn-add-club').addEventListener('click', addClub);
+  document.getElementById('club-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addClub();
+  });
+  renderClubs();
+
+  // ---------- Right-side menu ----------
+  const sections = {
+    create: document.getElementById('section-create'),
+    clubs: document.getElementById('section-clubs'),
+    tournaments: document.getElementById('section-tournaments')
+  };
+
+  function showSection(key) {
+    Object.entries(sections).forEach(([k, el]) => el.classList.toggle('hidden', k !== key));
+    document.querySelectorAll('.menu-item').forEach(mi =>
+      mi.classList.toggle('active', mi.dataset.section === key));
+    if (key === 'tournaments') renderMyTournaments();
+    if (key === 'clubs') renderClubs();
+    history.replaceState(null, '', key === 'create' ? location.pathname : '#' + key);
+  }
+
+  document.querySelectorAll('.menu-item').forEach(mi => {
+    mi.addEventListener('click', () => showSection(mi.dataset.section));
+  });
+
+  // Deep link: index.html#tournaments / #clubs
+  if (location.hash === '#tournaments' || location.hash === '#clubs') {
+    showSection(location.hash.slice(1));
+  }
+
+  // ---------- Create ----------
+  document.getElementById('btn-create').addEventListener('click', () => {
+    const f = FORMATS.find(x => x.id === selectedType);
+    const err = document.getElementById('form-error');
+    if (!f.ready) {
+      err.textContent = T('index.err.notReady', { name: fname(f.id) });
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    const params = new URLSearchParams({
+      name: document.getElementById('t-name').value.trim()
+    });
+    location.href = f.page + '?' + params.toString();
+  });
+
+  // Смена языка — перерисовать динамический контент (статику обновляет i18n.js)
+  window.addEventListener('pm:langchange', () => {
+    onTypeChange();
+    renderClubs();
+    renderMyTournaments();
+  });
+})();
+</script>
+</body>
+</html>

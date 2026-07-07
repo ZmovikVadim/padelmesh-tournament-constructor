@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="ball" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#eaf76a"/>
+      <stop offset="0.55" stop-color="#daee38"/>
+      <stop offset="1" stop-color="#b8cc1f"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ball -->
+  <circle cx="32" cy="32" r="29" fill="url(#ball)"/>
+
+  <!-- tennis-style seams (arcs stay inside the ball) -->
+  <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+    <path d="M 8.5 15.5 Q 32 31, 55.5 15.5"/>
+    <path d="M 8.5 48.5 Q 32 33, 55.5 48.5"/>
+  </g>
+
+  <!-- subtle outline -->
+  <circle cx="32" cy="32" r="29" fill="none" stroke="#9fb31a" stroke-width="1.5" opacity="0.6"/>
+</svg>
