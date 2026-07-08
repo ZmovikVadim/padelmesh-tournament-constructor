@@ -333,6 +333,8 @@
     <div class="actions" id="t-actions">
       <button class="btn" id="btn-save" data-i18n="t.actions.save">💾 Сохранить турнир</button>
       <button class="btn" id="btn-share" data-i18n="t.actions.share">🔗 Поделиться турниром</button>
+      <button class="btn secondary" id="btn-add-round" data-i18n="t.actions.addRound">➕ Добавить раунд</button>
+      <button class="btn secondary" id="btn-del-round" data-i18n="t.actions.delRound">➖ Удалить последний раунд</button>
       <button class="btn secondary" id="btn-reshuffle" data-i18n="t.actions.reshuffle">🔄 Пересобрать сетку (счёт сбросится)</button>
       <button class="btn secondary" id="btn-new" data-i18n="t.actions.new">Новый турнир</button>
     </div>
@@ -698,8 +700,8 @@
     });
     if (allComplete()) {
       const tab = document.createElement('button');
-      tab.className = 'round-tab' + (state.currentRound === 'final' ? ' active' : '');
-      tab.textContent = T('t.tab.final');
+      tab.className = 'round-tab show-results-tab' + (state.currentRound === 'final' ? ' active' : '');
+      tab.textContent = T('t.showResults');
       tab.addEventListener('click', () => {
         state.currentRound = 'final'; save(); renderTabs(); renderRound();
       });
@@ -863,11 +865,9 @@
         save();
         renderTabs();
         renderLeaderboard();
-        // Tournament just finished -> jump to final results
-        if (!wasComplete && allComplete()) {
-          state.currentRound = 'final';
-          save(); renderTabs(); renderRound();
-        }
+        // Результаты показываем по кнопке (см. renderRound), а не автоматически.
+        // При смене статуса завершённости перерисуем раунд — покажется/скроется кнопка.
+        if (wasComplete !== allComplete()) renderRound();
       }
       inA.addEventListener('input', () => onInput(inA, inB, 0));
       inB.addEventListener('input', () => onInput(inB, inA, 1));
@@ -1117,6 +1117,90 @@
     state.currentRound = 0;
     save();
     showTournament();
+  });
+
+  // ---------- Добавить / удалить раунд ----------
+  // Догенерировать ОДИН сбалансированный раунд по истории встреч (та же логика, что в generateSchedule).
+  function buildExtraRound() {
+    const n = state.players.length;
+    const partner = Array.from({ length: n }, () => new Array(n).fill(0));
+    const opponent = Array.from({ length: n }, () => new Array(n).fill(0));
+    const restCount = new Array(n).fill(0);
+    state.schedule.forEach(round => round.forEach(mt => {
+      const [a, b] = mt.teamA, [x, y] = mt.teamB;
+      partner[a][b]++; partner[b][a]++; partner[x][y]++; partner[y][x]++;
+      opponent[a][x]++; opponent[x][a]++; opponent[a][y]++; opponent[y][a]++;
+      opponent[b][x]++; opponent[x][b]++; opponent[b][y]++; opponent[y][b]++;
+    }));
+    (state.resting || []).forEach(list => (list || []).forEach(p => restCount[p]++));
+    const restPerRound = n % 4;
+    let resting = [];
+    if (restPerRound > 0) {
+      const order = shuffle([...Array(n).keys()]).sort((a, b) => restCount[a] - restCount[b]);
+      resting = order.slice(0, restPerRound);
+    }
+    const active = [...Array(n).keys()].filter(p => !resting.includes(p));
+    const cost = perm => {
+      let c2 = 0;
+      for (let c = 0; c < perm.length; c += 4) {
+        const [a, b, x, y] = [perm[c], perm[c + 1], perm[c + 2], perm[c + 3]];
+        c2 += 100 * (partner[a][b] ** 2 + partner[x][y] ** 2);
+        c2 += opponent[a][x] ** 2 + opponent[a][y] ** 2 + opponent[b][x] ** 2 + opponent[b][y] ** 2;
+      }
+      return c2;
+    };
+    let best = null, bestCost = Infinity;
+    for (let t = 0; t < 3000; t++) {
+      const perm = shuffle(active.slice());
+      const c2 = cost(perm);
+      if (c2 < bestCost) { bestCost = c2; best = perm; }
+      if (bestCost === 0 && t > 200) break;
+    }
+    const matches = [];
+    for (let c = 0; c < best.length; c += 4) {
+      matches.push({ teamA: [best[c], best[c + 1]], teamB: [best[c + 2], best[c + 3]] });
+    }
+    return { matches, resting };
+  }
+
+  // После добавления/удаления привести currentRound к валидному значению.
+  function fixCurrentRoundAfterChange() {
+    if (allComplete()) { state.currentRound = 'final'; return; }
+    if (state.currentRound === 'final' ||
+        (typeof state.currentRound === 'number' && state.currentRound > state.schedule.length - 1)) {
+      state.currentRound = state.schedule.length - 1;
+    }
+  }
+
+  document.getElementById('btn-add-round').addEventListener('click', () => {
+    const g = buildExtraRound();
+    state.schedule.push(g.matches);
+    if (!state.resting) state.resting = [];
+    state.resting.push(g.resting);
+    state.rounds = state.schedule.length;
+    state.currentRound = state.schedule.length - 1; // показать новый раунд для ввода счёта
+    save();
+    showTournament();
+  });
+
+  document.getElementById('btn-del-round').addEventListener('click', () => {
+    if (state.schedule.length <= 1) return;           // оставляем хотя бы один раунд
+    PMI18N.confirm({
+      title: T('t.delRoundModal.title'),
+      message: T('confirm.delRound'),
+      ok: T('t.delRoundModal.ok'),
+      icon: '🗑'
+    }).then(ok => {
+      if (!ok) return;
+      const lastIdx = state.schedule.length - 1;
+      state.schedule.pop();
+      if (state.resting) state.resting.pop();
+      Object.keys(state.scores).forEach(k => { if (k.indexOf(lastIdx + '-') === 0) delete state.scores[k]; });
+      state.rounds = state.schedule.length;
+      fixCurrentRoundAfterChange();
+      save();
+      showTournament();
+    });
   });
 
   document.getElementById('btn-new').addEventListener('click', () => {

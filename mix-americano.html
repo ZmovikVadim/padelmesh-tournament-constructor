@@ -337,6 +337,8 @@
     <div class="actions" id="t-actions">
       <button class="btn" id="btn-save" data-i18n="t.actions.save">💾 Сохранить турнир</button>
       <button class="btn" id="btn-share" data-i18n="t.actions.share">🔗 Поделиться турниром</button>
+      <button class="btn secondary" id="btn-add-round" data-i18n="t.actions.addRound">➕ Добавить раунд</button>
+      <button class="btn secondary" id="btn-del-round" data-i18n="t.actions.delRound">➖ Удалить последний раунд</button>
       <button class="btn secondary" id="btn-reshuffle" data-i18n="t.actions.reshuffle">🔄 Пересобрать сетку (счёт сбросится)</button>
       <button class="btn secondary" id="btn-new" data-i18n="t.actions.new">Новый турнир</button>
     </div>
@@ -700,8 +702,8 @@
     });
     if (allComplete()) {
       const tab = document.createElement('button');
-      tab.className = 'round-tab' + (state.currentRound === 'final' ? ' active' : '');
-      tab.textContent = T('t.tab.final');
+      tab.className = 'round-tab show-results-tab' + (state.currentRound === 'final' ? ' active' : '');
+      tab.textContent = T('t.showResults');
       tab.addEventListener('click', () => {
         state.currentRound = 'final'; save(); renderTabs(); renderRound();
       });
@@ -865,11 +867,8 @@
         save();
         renderTabs();
         renderLeaderboard();
-        // Tournament just finished -> jump to final results
-        if (!wasComplete && allComplete()) {
-          state.currentRound = 'final';
-          save(); renderTabs(); renderRound();
-        }
+        // Результаты показываем по кнопке (см. renderRound), а не автоматически.
+        if (wasComplete !== allComplete()) renderRound();
       }
       inA.addEventListener('input', () => onInput(inA, inB, 0));
       inB.addEventListener('input', () => onInput(inB, inA, 1));
@@ -1094,6 +1093,78 @@
     state.currentRound = 0;
     save();
     showTournament();
+  });
+
+  // ---------- Добавить / удалить раунд (mix upfront) ----------
+  // Догенерировать ОДИН раунд: пары мужчина+женщина по истории встреч (как в generateSchedule).
+  function buildExtraRound() {
+    const n = state.players.length, m = state.menCount;
+    const partner = Array.from({ length: n }, () => new Array(n).fill(0));
+    const opponent = Array.from({ length: n }, () => new Array(n).fill(0));
+    state.schedule.forEach(round => round.forEach(mt => {
+      const [a1, a2] = mt.teamA, [b1, b2] = mt.teamB;
+      partner[a1][a2]++; partner[a2][a1]++; partner[b1][b2]++; partner[b2][b1]++;
+      [a1, a2].forEach(p => [b1, b2].forEach(q => { opponent[p][q]++; opponent[q][p]++; }));
+    }));
+    const teamsCost = teams => {
+      let cost = 0;
+      for (let c = 0; c < teams.length; c += 2) {
+        const [a1, a2] = teams[c], [b1, b2] = teams[c + 1];
+        cost += 100 * (partner[a1][a2] ** 2 + partner[b1][b2] ** 2);
+        cost += opponent[a1][b1] ** 2 + opponent[a1][b2] ** 2 + opponent[a2][b1] ** 2 + opponent[a2][b2] ** 2;
+      }
+      return cost;
+    };
+    let best = null, bestCost = Infinity;
+    for (let t = 0; t < 3000; t++) {
+      const men = shuffle([...Array(m).keys()]);
+      const women = shuffle([...Array(m).keys()].map(i => i + m));
+      const teams = men.map((mi, i) => [mi, women[i]]);
+      const c2 = teamsCost(teams);
+      if (c2 < bestCost) { bestCost = c2; best = teams; }
+      if (bestCost === 0 && t > 200) break;
+    }
+    const matches = [];
+    for (let c = 0; c < best.length; c += 2) matches.push({ teamA: best[c], teamB: best[c + 1] });
+    return { matches };
+  }
+
+  function fixCurrentRoundAfterChange() {
+    if (allComplete()) { state.currentRound = 'final'; return; }
+    if (state.currentRound === 'final' ||
+        (typeof state.currentRound === 'number' && state.currentRound > state.schedule.length - 1)) {
+      state.currentRound = state.schedule.length - 1;
+    }
+  }
+
+  document.getElementById('btn-add-round').addEventListener('click', () => {
+    const g = buildExtraRound();
+    state.schedule.push(g.matches);
+    if (state.resting) state.resting.push([]);
+    state.rounds = state.schedule.length;
+    state.currentRound = state.schedule.length - 1;
+    save();
+    showTournament();
+  });
+
+  document.getElementById('btn-del-round').addEventListener('click', () => {
+    if (state.schedule.length <= 1) return;
+    PMI18N.confirm({
+      title: T('t.delRoundModal.title'),
+      message: T('confirm.delRound'),
+      ok: T('t.delRoundModal.ok'),
+      icon: '🗑'
+    }).then(ok => {
+      if (!ok) return;
+      const lastIdx = state.schedule.length - 1;
+      state.schedule.pop();
+      if (state.resting) state.resting.pop();
+      Object.keys(state.scores).forEach(k => { if (k.indexOf(lastIdx + '-') === 0) delete state.scores[k]; });
+      state.rounds = state.schedule.length;
+      fixCurrentRoundAfterChange();
+      save();
+      showTournament();
+    });
   });
 
   document.getElementById('btn-new').addEventListener('click', () => {

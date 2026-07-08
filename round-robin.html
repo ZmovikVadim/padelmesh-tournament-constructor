@@ -681,8 +681,8 @@
     });
     if (allComplete()) {
       const tab = document.createElement('button');
-      tab.className = 'round-tab' + (state.currentRound === 'final' ? ' active' : '');
-      tab.textContent = T('t.tab.final');
+      tab.className = 'round-tab show-results-tab' + (state.currentRound === 'final' ? ' active' : '');
+      tab.textContent = T('t.showResults');
       tab.addEventListener('click', () => {
         state.currentRound = 'final'; save(); renderTabs(); renderRound();
       });
@@ -837,10 +837,8 @@
         save();
         renderTabs();
         renderLeaderboard();
-        if (!wasComplete && allComplete()) {
-          state.currentRound = 'final';
-          save(); renderTabs(); renderRound();
-        }
+        // Результаты показываем по кнопке (см. renderRound), а не автоматически.
+        if (wasComplete !== allComplete()) renderRound();
       }
       inA.addEventListener('input', () => onInput(inA, inB, 0));
       inB.addEventListener('input', () => onInput(inB, inA, 1));

@@ -147,6 +147,9 @@
 
       't.tab.round': 'Раунд {n}',
       't.tab.final': '🏆 Финальные результаты',
+      't.showResults': '🏆 Показать результаты',
+      't.delRoundModal.title': 'Удалить последний раунд?',
+      't.delRoundModal.ok': '➖ Удалить раунд',
       't.final.h2': 'Финальные результаты',
       't.final.finished': 'турнир завершён',
       't.final.allDone': 'все результаты внесены',
@@ -173,6 +176,8 @@
       't.actions.share': '🔗 Поделиться турниром',
       't.actions.reshuffle': '🔄 Пересобрать сетку (счёт сбросится)',
       't.actions.restart': '🔄 Начать заново (счёт сбросится)',
+      't.actions.addRound': '➕ Добавить раунд',
+      't.actions.delRound': '➖ Удалить последний раунд',
       't.actions.new': 'Новый турнир',
       't.btn.finish': '🏁 Завершить турнир',
       't.finishModal.title': 'Завершить турнир?',
@@ -187,6 +192,7 @@
       'confirm.reshuffle': 'Пересобрать сетку? Все введённые результаты будут сброшены.',
       'confirm.reshuffleRR': 'Пересобрать сетку (новая жеребьёвка)? Все введённые результаты будут сброшены.',
       'confirm.restart': 'Начать турнир заново? Останется случайный первый раунд, все результаты будут сброшены.',
+      'confirm.delRound': 'Удалить последний раунд? Если в нём есть результаты, они будут удалены, а текущая таблица станет итоговой.',
 
       /* пьедестал */
       'podium.aria': 'Пьедестал победителей',
@@ -345,6 +351,9 @@
 
       't.tab.round': 'Round {n}',
       't.tab.final': '🏆 Final results',
+      't.showResults': '🏆 Show results',
+      't.delRoundModal.title': 'Remove the last round?',
+      't.delRoundModal.ok': '➖ Remove round',
       't.final.h2': 'Final results',
       't.final.finished': 'tournament finished',
       't.final.allDone': 'all results entered',
@@ -371,6 +380,8 @@
       't.actions.share': '🔗 Share tournament',
       't.actions.reshuffle': '🔄 Rebuild the draw (scores reset)',
       't.actions.restart': '🔄 Start over (scores reset)',
+      't.actions.addRound': '➕ Add a round',
+      't.actions.delRound': '➖ Remove last round',
       't.actions.new': 'New tournament',
       't.btn.finish': '🏁 Finish tournament',
       't.finishModal.title': 'Finish tournament?',
@@ -384,6 +395,7 @@
       'confirm.reshuffle': 'Rebuild the draw? All entered results will be reset.',
       'confirm.reshuffleRR': 'Rebuild the draw (new draw)? All entered results will be reset.',
       'confirm.restart': 'Start the tournament over? A random first round remains, all results are reset.',
+      'confirm.delRound': 'Remove the last round? Any results in it will be deleted and the current standings become final.',
 
       'podium.aria': "Winners' podium",
       'podium.pts': '{pts} pts',
@@ -538,6 +550,9 @@
 
       't.tab.round': 'Ronda {n}',
       't.tab.final': '🏆 Resultados finales',
+      't.showResults': '🏆 Ver resultados',
+      't.delRoundModal.title': '¿Quitar la última ronda?',
+      't.delRoundModal.ok': '➖ Quitar ronda',
       't.final.h2': 'Resultados finales',
       't.final.finished': 'torneo finalizado',
       't.final.allDone': 'todos los resultados introducidos',
@@ -564,6 +579,8 @@
       't.actions.share': '🔗 Compartir torneo',
       't.actions.reshuffle': '🔄 Regenerar el cuadro (se borra el marcador)',
       't.actions.restart': '🔄 Empezar de nuevo (se borra el marcador)',
+      't.actions.addRound': '➕ Añadir ronda',
+      't.actions.delRound': '➖ Quitar última ronda',
       't.actions.new': 'Nuevo torneo',
       't.btn.finish': '🏁 Finalizar torneo',
       't.finishModal.title': '¿Finalizar torneo?',
@@ -577,6 +594,7 @@
       'confirm.reshuffle': '¿Regenerar el cuadro? Se borrarán todos los resultados introducidos.',
       'confirm.reshuffleRR': '¿Regenerar el cuadro (nuevo sorteo)? Se borrarán todos los resultados introducidos.',
       'confirm.restart': '¿Empezar el torneo de nuevo? Se mantiene una primera ronda aleatoria y se borran todos los resultados.',
+      'confirm.delRound': '¿Quitar la última ronda? Los resultados que tenga se eliminarán y la clasificación actual será la definitiva.',
 
       'podium.aria': 'Podio de ganadores',
       'podium.pts': '{pts} pts',
@@ -880,7 +898,9 @@
       '.player-rounds .rp-rest{color:var(--color-black-40,rgba(32,33,38,.4));font-style:italic;}' +
       /* кнопка-ссылка «Оплатить участие» */
       'a.paylink-btn{text-decoration:none;margin:2px 0 20px;}' +
-      '.paylink-btn.hidden{display:none;}';
+      '.paylink-btn.hidden{display:none;}' +
+      /* кнопка «Показать результаты» — справа в ряду вкладок раундов */
+      '.show-results-tab{margin-left:auto;}';
     document.head.appendChild(st);
   }
 
@@ -891,8 +911,45 @@
     renderSwitchers();
   }
 
+  // Стилевое модальное подтверждение — использует классы .modal-overlay/.modal страницы,
+  // поэтому выглядит как остальные модалки. Возвращает Promise<boolean>.
+  function confirmDialog(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var ov = document.createElement('div');
+      ov.className = 'modal-overlay';
+      ov.style.zIndex = '200';
+      var modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.innerHTML =
+        '<div class="modal-icon">' + (opts.icon || '⚠️') + '</div>' +
+        '<h3></h3><p></p>' +
+        '<div class="modal-actions">' +
+        '<button class="btn secondary" data-act="cancel"></button>' +
+        '<button class="btn" data-act="ok"></button>' +
+        '</div>';
+      modal.querySelector('h3').textContent = opts.title || '';
+      modal.querySelector('p').textContent = opts.message || '';
+      modal.querySelector('[data-act="cancel"]').textContent = opts.cancel || t('common.cancel');
+      modal.querySelector('[data-act="ok"]').textContent = opts.ok || 'OK';
+      ov.appendChild(modal);
+      function close(v) {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        document.removeEventListener('keydown', onKey);
+        resolve(v);
+      }
+      function onKey(e) { if (e.key === 'Escape') close(false); }
+      ov.addEventListener('click', function (e) { if (e.target === ov) close(false); });
+      modal.querySelector('[data-act="cancel"]').addEventListener('click', function () { close(false); });
+      modal.querySelector('[data-act="ok"]').addEventListener('click', function () { close(true); });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(ov);
+    });
+  }
+
   window.PMI18N = {
     t: t,
+    confirm: confirmDialog,
     apply: apply,
     setLang: setLang,
     formatDate: formatDate,

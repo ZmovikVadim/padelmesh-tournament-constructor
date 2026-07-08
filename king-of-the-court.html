@@ -339,6 +339,8 @@
     <div class="actions" id="t-actions">
       <button class="btn" id="btn-save" data-i18n="t.actions.save">💾 Сохранить турнир</button>
       <button class="btn" id="btn-share" data-i18n="t.actions.share">🔗 Поделиться турниром</button>
+      <button class="btn secondary" id="btn-add-round" data-i18n="t.actions.addRound">➕ Добавить раунд</button>
+      <button class="btn secondary" id="btn-del-round" data-i18n="t.actions.delRound">➖ Удалить последний раунд</button>
       <button class="btn secondary" id="btn-reshuffle" data-i18n="t.actions.restart">🔄 Начать заново (счёт сбросится)</button>
       <button class="btn secondary" id="btn-new" data-i18n="t.actions.new">Новый турнир</button>
     </div>
@@ -692,8 +694,8 @@
     });
     if (allComplete()) {
       const tab = document.createElement('button');
-      tab.className = 'round-tab' + (state.currentRound === 'final' ? ' active' : '');
-      tab.textContent = T('t.tab.final');
+      tab.className = 'round-tab show-results-tab' + (state.currentRound === 'final' ? ' active' : '');
+      tab.textContent = T('t.showResults');
       tab.addEventListener('click', () => {
         state.currentRound = 'final'; save(); renderTabs(); renderRound();
       });
@@ -868,11 +870,8 @@
         renderLeaderboard();
         refreshNextRoundBox();
         refreshRegenBox();
-        // Tournament just finished -> jump to final results
-        if (!wasComplete && allComplete()) {
-          state.currentRound = 'final';
-          save(); renderTabs(); renderRound();
-        }
+        // Результаты показываем по кнопке (см. renderRound), а не автоматически.
+        if (wasComplete !== allComplete()) renderRound();
       }
       inA.addEventListener('input', () => onInput(inA, inB, 0));
       inB.addEventListener('input', () => onInput(inB, inA, 1));
@@ -1179,6 +1178,47 @@
     state.currentRound = 0;
     save();
     showTournament();
+  });
+
+  // ---------- Добавить / удалить раунд (прогрессивный формат) ----------
+  function fixCurrentRoundAfterChange() {
+    if (allComplete()) { state.currentRound = 'final'; return; }
+    if (state.currentRound === 'final' ||
+        (typeof state.currentRound === 'number' && state.currentRound > state.schedule.length - 1)) {
+      state.currentRound = state.schedule.length - 1;
+    }
+  }
+
+  document.getElementById('btn-add-round').addEventListener('click', () => {
+    state.rounds += 1;
+    state.currentRound = state.schedule.length - 1;
+    save();
+    showTournament();
+  });
+
+  document.getElementById('btn-del-round').addEventListener('click', () => {
+    if (state.rounds <= 1) return;
+    PMI18N.confirm({
+      title: T('t.delRoundModal.title'),
+      message: T('confirm.delRound'),
+      ok: T('t.delRoundModal.ok'),
+      icon: '🗑'
+    }).then(ok => {
+      if (!ok) return;
+      if (state.schedule.length >= state.rounds) {
+        if (state.schedule.length <= 1) return;
+        const lastIdx = state.schedule.length - 1;
+        state.schedule.pop();
+        if (state.resting) state.resting.pop();
+        Object.keys(state.scores).forEach(k => { if (k.indexOf(lastIdx + '-') === 0) delete state.scores[k]; });
+        state.rounds = state.schedule.length;
+      } else {
+        state.rounds -= 1;
+      }
+      fixCurrentRoundAfterChange();
+      save();
+      showTournament();
+    });
   });
 
   document.getElementById('btn-new').addEventListener('click', () => {
