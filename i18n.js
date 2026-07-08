@@ -93,6 +93,24 @@
       'setup.payLink.ph': 'Например, ссылка Tikkie или PayPal (необязательно)',
       'setup.payLink.hint': 'Необязательно. Будет видна всем, у кого есть ссылка на турнир.',
       't.payLink.button': '💳 Оплатить участие',
+      'setup.level.label': 'Уровень турнира',
+      'setup.level.any': 'Любой уровень',
+      'setup.fee.label': 'Стоимость участия',
+      'setup.fee.ph': 'Например, 15 (можно пропустить)',
+      'setup.duration.label': 'Длительность',
+      'setup.duration.customPh': 'часов',
+      'duration.custom': 'Другое',
+      'unit.hours': 'ч',
+      'sub.duration': '{h} ч',
+      'currency.EUR': 'EUR',
+      'currency.USD': 'USD',
+      'currency.AED': 'AED',
+      'level.beg': 'Начинающий',
+      'level.beg+': 'Начинающий+',
+      'level.mid': 'Средний',
+      'level.mid+': 'Средний+',
+      'level.adv': 'Продвинутый',
+      'level.adv+': 'Продвинутый+',
       'setup.players': 'Игроков',
       'setup.pairs': 'Пар',
       'setup.rounds': 'Раундов',
@@ -300,6 +318,24 @@
       'setup.payLink.ph': 'e.g. a Tikkie or PayPal link (optional)',
       'setup.payLink.hint': 'Optional. Visible to anyone who has the tournament link.',
       't.payLink.button': '💳 Pay the entry',
+      'setup.level.label': 'Tournament level',
+      'setup.level.any': 'Any level',
+      'setup.fee.label': 'Entry fee',
+      'setup.fee.ph': 'e.g. 15 (optional)',
+      'setup.duration.label': 'Duration',
+      'setup.duration.customPh': 'hours',
+      'duration.custom': 'Custom',
+      'unit.hours': 'h',
+      'sub.duration': '{h} h',
+      'currency.EUR': 'EUR',
+      'currency.USD': 'USD',
+      'currency.AED': 'AED',
+      'level.beg': 'Beginner',
+      'level.beg+': 'Beginner+',
+      'level.mid': 'Intermediate',
+      'level.mid+': 'Intermediate+',
+      'level.adv': 'Advanced',
+      'level.adv+': 'Advanced+',
       'setup.players': 'Players',
       'setup.pairs': 'Pairs',
       'setup.rounds': 'Rounds',
@@ -499,6 +535,24 @@
       'setup.payLink.ph': 'p. ej., un enlace de Tikkie o PayPal (opcional)',
       'setup.payLink.hint': 'Opcional. Visible para cualquiera que tenga el enlace del torneo.',
       't.payLink.button': '💳 Pagar la inscripción',
+      'setup.level.label': 'Nivel del torneo',
+      'setup.level.any': 'Cualquier nivel',
+      'setup.fee.label': 'Cuota de inscripción',
+      'setup.fee.ph': 'p. ej., 15 (opcional)',
+      'setup.duration.label': 'Duración',
+      'setup.duration.customPh': 'horas',
+      'duration.custom': 'Otra',
+      'unit.hours': 'h',
+      'sub.duration': '{h} h',
+      'currency.EUR': 'EUR',
+      'currency.USD': 'USD',
+      'currency.AED': 'AED',
+      'level.beg': 'Principiante',
+      'level.beg+': 'Principiante+',
+      'level.mid': 'Intermedio',
+      'level.mid+': 'Intermedio+',
+      'level.adv': 'Avanzado',
+      'level.adv+': 'Avanzado+',
       'setup.players': 'Jugadores',
       'setup.pairs': 'Parejas',
       'setup.rounds': 'Rondas',
@@ -636,6 +690,10 @@
       'card.notPlayed': '—'
     }
   };
+
+  /* ===== Уровни игры и валюты (общие для всех языков) ===== */
+  var LEVELS = ['beg', 'beg+', 'mid', 'mid+', 'adv', 'adv+'];
+  var CURRENCY = { EUR: 'EUR', USD: 'USD', AED: 'AED' };
 
   /* ============================== ФОРМАТЫ ============================== */
   /* Названия форматов — общие для всех языков (собственные имена). */
@@ -867,6 +925,7 @@
     document.documentElement.setAttribute('lang', l);
     apply();
     renderSwitchers();
+    initWidgets();
     window.dispatchEvent(new CustomEvent('pm:langchange', { detail: { lang: l } }));
   }
 
@@ -900,7 +959,19 @@
       'a.paylink-btn{text-decoration:none;margin:2px 0 20px;}' +
       '.paylink-btn.hidden{display:none;}' +
       /* кнопка «Показать результаты» — справа в ряду вкладок раундов */
-      '.show-results-tab{margin-left:auto;}';
+      '.show-results-tab{margin-left:auto;}' +
+      /* мультиселект уровня (выпадающий список с чекбоксами) */
+      '.level-select{position:relative;}' +
+      '.lvl-toggle{width:100%;text-align:left;background:var(--color-black-3,rgba(32,33,38,.03));border:1px solid var(--color-black-10,rgba(32,33,38,.1));border-radius:14px;padding:10px 14px;font-family:inherit;font-size:15px;color:var(--color-black,#202126);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:45px;}' +
+      '.lvl-toggle:hover{border-color:var(--color-orange,#ff5734);}' +
+      '.lvl-toggle-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
+      '.lvl-toggle-text.lvl-placeholder{color:var(--color-black-40,rgba(32,33,38,.4));}' +
+      '.lvl-caret{color:var(--color-black-40,rgba(32,33,38,.4));font-size:11px;flex-shrink:0;}' +
+      '.lvl-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;background:#fff;border:1px solid var(--color-black-10,rgba(32,33,38,.1));border-radius:14px;box-shadow:0 8px 24px rgba(32,33,38,.14);padding:6px;max-height:260px;overflow:auto;}' +
+      '.lvl-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:14px;}' +
+      '.lvl-opt:hover{background:var(--color-black-3,rgba(32,33,38,.03));}' +
+      '.lvl-opt input{width:16px;height:16px;accent-color:var(--color-orange,#ff5734);cursor:pointer;flex-shrink:0;}' +
+      '.dur-custom{margin-top:8px;}';
     document.head.appendChild(st);
   }
 
@@ -909,6 +980,7 @@
     document.documentElement.setAttribute('lang', lang);
     apply();
     renderSwitchers();
+    initWidgets();
   }
 
   // Стилевое модальное подтверждение — использует классы .modal-overlay/.modal страницы,
@@ -947,9 +1019,99 @@
     });
   }
 
+  /* ===== Виджеты: уровень (мультичекбоксы) и длительность ===== */
+  function levelLabel(id) { return t('level.' + id); }
+  function currencySymbol(code) { return CURRENCY[code] || code || ''; }
+
+  function updateLevelToggle(el) {
+    var checked = [].slice.call(el.querySelectorAll('input:checked')).map(function (c) { return c.value; });
+    el.dataset.selected = checked.join(',');
+    var txt = el.querySelector('.lvl-toggle-text');
+    if (!txt) return;
+    txt.textContent = checked.length ? checked.map(levelLabel).join(', ') : t('setup.level.any');
+    txt.classList.toggle('lvl-placeholder', checked.length === 0);
+  }
+  function buildLevelSelect(el) {
+    var selected = (el.dataset.selected || '').split(',').filter(Boolean);
+    el.innerHTML = '';
+    var toggle = document.createElement('button');
+    toggle.type = 'button'; toggle.className = 'lvl-toggle';
+    var txt = document.createElement('span'); txt.className = 'lvl-toggle-text';
+    var caret = document.createElement('span'); caret.className = 'lvl-caret'; caret.textContent = '▾';
+    toggle.appendChild(txt); toggle.appendChild(caret);
+    var menu = document.createElement('div'); menu.className = 'lvl-menu hidden';
+    LEVELS.forEach(function (id) {
+      var lab = document.createElement('label'); lab.className = 'lvl-opt';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = id;
+      if (selected.indexOf(id) >= 0) cb.checked = true;
+      cb.addEventListener('change', function () { updateLevelToggle(el); });
+      var sp = document.createElement('span'); sp.textContent = levelLabel(id);
+      lab.appendChild(cb); lab.appendChild(sp);
+      menu.appendChild(lab);
+    });
+    el.appendChild(toggle); el.appendChild(menu);
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var opened = document.querySelectorAll('.lvl-menu:not(.hidden)');
+      for (var i = 0; i < opened.length; i++) if (opened[i] !== menu) opened[i].classList.add('hidden');
+      menu.classList.toggle('hidden');
+    });
+    updateLevelToggle(el);
+  }
+  function getLevels(el) { return el ? (el.dataset.selected || '').split(',').filter(Boolean) : []; }
+
+  function buildDuration(el) {
+    var cur = el.dataset.value || '2';
+    el.innerHTML = '';
+    var sel = document.createElement('select'); sel.className = 'dur-select';
+    ['1.5', '2', '2.5', '3'].forEach(function (v) {
+      var o = document.createElement('option'); o.value = v; o.textContent = v + ' ' + t('unit.hours'); sel.appendChild(o);
+    });
+    var oc = document.createElement('option'); oc.value = 'custom'; oc.textContent = t('duration.custom'); sel.appendChild(oc);
+    var inp = document.createElement('input'); inp.type = 'number'; inp.min = '0.5'; inp.step = '0.5';
+    inp.className = 'dur-custom'; inp.placeholder = t('setup.duration.customPh');
+    var presets = ['1.5', '2', '2.5', '3'];
+    if (presets.indexOf(String(cur)) >= 0) { sel.value = String(cur); inp.classList.add('hidden'); }
+    else { sel.value = 'custom'; inp.value = cur; }
+    sel.addEventListener('change', function () {
+      if (sel.value === 'custom') { inp.classList.remove('hidden'); el.dataset.value = inp.value || ''; }
+      else { inp.classList.add('hidden'); el.dataset.value = sel.value; }
+    });
+    inp.addEventListener('input', function () { el.dataset.value = inp.value; });
+    el.appendChild(sel); el.appendChild(inp);
+  }
+  function getDuration(el) {
+    if (!el) return null;
+    var sel = el.querySelector('.dur-select'), inp = el.querySelector('.dur-custom');
+    if (!sel) return null;
+    var v = sel.value === 'custom' ? parseFloat(inp && inp.value) : parseFloat(sel.value);
+    return (isFinite(v) && v > 0) ? v : null;
+  }
+
+  function initWidgets(root) {
+    root = root || document;
+    var a = root.querySelectorAll('[data-level-select]'), i;
+    for (i = 0; i < a.length; i++) buildLevelSelect(a[i]);
+    var b = root.querySelectorAll('[data-duration]');
+    for (i = 0; i < b.length; i++) buildDuration(b[i]);
+  }
+  // закрытие меню уровней по клику вне виджета
+  document.addEventListener('click', function (e) {
+    var opened = document.querySelectorAll('.lvl-menu:not(.hidden)');
+    for (var i = 0; i < opened.length; i++) {
+      if (opened[i].parentNode && !opened[i].parentNode.contains(e.target)) opened[i].classList.add('hidden');
+    }
+  });
+
   window.PMI18N = {
     t: t,
     confirm: confirmDialog,
+    getLevels: getLevels,
+    getDuration: getDuration,
+    levelLabel: levelLabel,
+    currencySymbol: currencySymbol,
+    initWidgets: initWidgets,
+    LEVELS: LEVELS,
     apply: apply,
     setLang: setLang,
     formatDate: formatDate,

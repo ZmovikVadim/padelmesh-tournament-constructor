@@ -250,15 +250,34 @@
           <input type="time" id="t-time">
         </div>
         <div>
+          <label data-i18n="setup.duration.label">Длительность</label>
+          <div id="t-duration" data-duration data-value="2"></div>
+        </div>
+        <div style="grid-column: 1 / -1;">
           <label for="t-club" data-i18n="setup.club">Клуб</label>
           <input type="text" id="t-club" data-i18n-ph="setup.club.ph" placeholder="Название клуба (можно пропустить)" maxlength="60" list="clubs-datalist">
           <datalist id="clubs-datalist"></datalist>
           <div class="hint" data-i18n="setup.club.hint">Скоро — выбор из «Моих клубов»</div>
         </div>
+        <div>
+          <label for="t-fee" data-i18n="setup.fee.label">Стоимость участия</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" id="t-fee" min="0" step="1" data-i18n-ph="setup.fee.ph" placeholder="Например, 15 (можно пропустить)" style="flex: 1; min-width: 0;">
+            <select id="t-currency" style="width: auto; flex-shrink: 0;">
+              <option value="EUR" data-i18n="currency.EUR">Евро (€)</option>
+              <option value="USD" data-i18n="currency.USD">Доллар ($)</option>
+              <option value="AED" data-i18n="currency.AED">Дирхам (dh)</option>
+            </select>
+          </div>
+        </div>
         <div style="grid-column: 1 / -1;">
           <label for="t-paylink" data-i18n="setup.payLink.label">Ссылка для оплаты</label>
           <input type="text" id="t-paylink" data-i18n-ph="setup.payLink.ph" placeholder="Например, ссылка Tikkie или PayPal (необязательно)" maxlength="300" inputmode="url">
           <div class="hint" data-i18n="setup.payLink.hint">Необязательно. Будет видна всем, у кого есть ссылка на турнир.</div>
+        </div>
+        <div>
+          <label data-i18n="setup.level.label">Уровень турнира</label>
+          <div class="level-select" id="t-level" data-level-select></div>
         </div>
       </div>
       <div class="settings-grid">
@@ -309,6 +328,12 @@
 
     <a id="paylink-anchor" class="btn paylink-btn hidden" href="#" target="_blank" rel="noopener noreferrer" data-i18n="t.payLink.button">💳 Оплатить участие</a>
 
+    <div class="actions" id="t-actions-top" style="margin: 0 0 16px;">
+      <button class="btn" id="btn-save" data-i18n="t.actions.save">💾 Сохранить турнир</button>
+      <button class="btn" id="btn-share" data-i18n="t.actions.share">🔗 Поделиться турниром</button>
+      <button class="btn secondary" id="btn-add-round" data-i18n="t.actions.addRound">➕ Добавить раунд</button>
+      <button class="btn secondary" id="btn-del-round" data-i18n="t.actions.delRound">➖ Удалить последний раунд</button>
+    </div>
     <div class="round-tabs" id="round-tabs"></div>
     <div id="rounds-container"></div>
 
@@ -337,10 +362,6 @@
     </div>
 
     <div class="actions" id="t-actions">
-      <button class="btn" id="btn-save" data-i18n="t.actions.save">💾 Сохранить турнир</button>
-      <button class="btn" id="btn-share" data-i18n="t.actions.share">🔗 Поделиться турниром</button>
-      <button class="btn secondary" id="btn-add-round" data-i18n="t.actions.addRound">➕ Добавить раунд</button>
-      <button class="btn secondary" id="btn-del-round" data-i18n="t.actions.delRound">➖ Удалить последний раунд</button>
       <button class="btn secondary" id="btn-reshuffle" data-i18n="t.actions.restart">🔄 Начать заново (счёт сбросится)</button>
       <button class="btn secondary" id="btn-new" data-i18n="t.actions.new">Новый турнир</button>
     </div>
@@ -606,6 +627,10 @@
       time: tTimeInput.value,
       club: document.getElementById('t-club').value.trim(),
       payLink: safeUrl(document.getElementById('t-paylink').value),
+      levels: PMI18N.getLevels(document.getElementById('t-level')),
+      fee: document.getElementById('t-fee').value.trim(),
+      currency: document.getElementById('t-currency').value,
+      durationHours: PMI18N.getDuration(document.getElementById('t-duration')),
       players, courts, rounds,
       matchPoints: +matchPointsSel.value,
       ...(() => { const g = generateFirstRound(n); return { schedule: [g.matches], resting: [g.resting] }; })(),
@@ -637,6 +662,9 @@
     parts.push(T('sub.courtsWord', { n: Math.floor(state.players.length / 4) }));
     parts.push(T('sub.rounds', { n: state.rounds }));
     parts.push(T('sub.matchTo', { mp: state.matchPoints }));
+    if (state.durationHours) parts.push(T('sub.duration', { h: state.durationHours }));
+    if (state.fee && parseFloat(state.fee) > 0) parts.push(state.fee + ' ' + PMI18N.currencySymbol(state.currency || 'EUR'));
+    if (state.levels && state.levels.length) parts.push(state.levels.map(id => PMI18N.levelLabel(id)).join(', '));
     let sub = parts.join(' · ');
     if (state.finished) sub += ' · ' + T('sub.finished');
     else if (allComplete()) sub += ' · ' + T('sub.allDone');
@@ -653,6 +681,7 @@
     renderPayLink();
     if (readOnly) {
       document.getElementById('t-actions').classList.add('hidden');
+      document.getElementById('t-actions-top').classList.add('hidden');
     }
     renderTabs();
     renderRound();
@@ -1155,6 +1184,7 @@
     return {
       name: state.name, club: state.club, date: state.date, time: state.time,
       payLink: state.payLink || '',
+      levels: state.levels || [], fee: state.fee || '', currency: state.currency || 'EUR', durationHours: state.durationHours || null,
       players: state.players, courts: state.courts, rounds: state.rounds,
       matchPoints: state.matchPoints, schedule: state.schedule,
       resting: state.resting || [],
