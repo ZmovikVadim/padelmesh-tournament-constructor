@@ -320,6 +320,7 @@
     <a id="paylink-anchor" class="btn paylink-btn hidden" href="#" target="_blank" rel="noopener noreferrer" data-i18n="t.payLink.button">💳 Оплатить участие</a>
 
     <div class="actions" id="t-actions-top" style="margin: 0 0 16px;">
+      <button class="btn secondary" id="btn-edit-players" data-i18n="t.actions.editPlayers" style="display: none;">✏️ Изменить игроков</button>
       <button class="btn" id="btn-save" data-i18n="t.actions.save">💾 Сохранить турнир</button>
       <button class="btn" id="btn-share" data-i18n="t.actions.share">🔗 Поделиться турниром</button>
     </div>
@@ -402,6 +403,8 @@
   const STORE_KEY = 'padelmesh_tournaments_v1'; // shared store: { id: tournamentState }
   let state = null; // { id, type, finished, teams[[p1,p2]], courts[], rounds, matchPoints, schedule[][], scores{}, paid{} }
   let readOnly = false;
+  let editing = false;
+  let editNamesPrefilled = false;
 
   function loadStore() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { return {}; }
@@ -541,6 +544,13 @@
     const p = +numPairsSel.value;
     renderPairRows(p);
     renderInputRows(courtInputsDiv, p / 2, i => T('default.court', { n: i + 1 }));
+    if (editing && !editNamesPrefilled && state && p === state.teams.length) {
+      const pin = pairInputsDiv.querySelectorAll('input');
+      state.teams.forEach((tm, i) => { if (pin[i * 2]) pin[i * 2].value = tm[0]; if (pin[i * 2 + 1]) pin[i * 2 + 1].value = tm[1]; });
+      const cin = courtInputsDiv.querySelectorAll('input');
+      (state.courts || []).forEach((nm, i) => { if (cin[i]) cin[i].value = nm; });
+      editNamesPrefilled = true;
+    }
     step1Card.classList.add('hidden');
     step2Card.classList.remove('hidden');
     const first = pairInputsDiv.querySelector('input');
@@ -602,8 +612,8 @@
     const courts = [...courtInputsDiv.querySelectorAll('input')]
       .map((inp, i) => inp.value.trim() || T('default.court', { n: i + 1 }));
 
-    state = {
-      id: newId(),
+    const newState = {
+      id: editing ? state.id : newId(),
       type: 'round-robin',
       finished: false,
       name: document.getElementById('t-name').value.trim(),
@@ -624,10 +634,97 @@
       paid: {},   // pairIndex -> true; organizer-only, never shared
       currentRound: 0
     };
+    if (editing) {
+      const sameStructure = newState.teams.length === state.teams.length;
+      if (sameStructure) {
+        newState.schedule = state.schedule;
+        if (state.resting) newState.resting = state.resting;
+        newState.scores = state.scores;
+        newState.currentRound = state.currentRound;
+      }
+      newState.paid = state.paid || {};
+      editing = false;
+      const bs = document.getElementById('btn-start');
+      bs.setAttribute('data-i18n', 'setup.btn.start'); bs.textContent = T('setup.btn.start');
+      hideCancelEdit();
+    }
+    state = newState;
     save();
     history.replaceState(null, '', location.pathname + '?id=' + state.id);
     showTournament();
   });
+
+  // ---------- Редактирование игроков (до первых результатов) ----------
+  function hasAnyScore() {
+    const sc = state && state.scores;
+    if (!sc) return false;
+    return Object.keys(sc).some(k => { const s = sc[k]; return s && s[0] !== null && s[1] !== null; });
+  }
+  function updateEditBtn() {
+    const b = document.getElementById('btn-edit-players');
+    if (!b) return;
+    b.style.display = (!readOnly && state && !hasAnyScore()) ? '' : 'none';
+  }
+  function ensureCancelEdit() {
+    ['step1-card', 'step2-card'].forEach(id => {
+      const card = document.getElementById(id);
+      const actions = card && card.querySelector('.actions');
+      if (actions && !actions.querySelector('.btn-cancel-edit')) {
+        const cb = document.createElement('button');
+        cb.type = 'button';
+        cb.className = 'btn secondary btn-cancel-edit';
+        cb.setAttribute('data-i18n', 'common.cancel');
+        cb.textContent = T('common.cancel');
+        cb.addEventListener('click', cancelEdit);
+        actions.appendChild(cb);
+      }
+    });
+    document.querySelectorAll('.btn-cancel-edit').forEach(b => { b.style.display = ''; });
+  }
+  function hideCancelEdit() {
+    document.querySelectorAll('.btn-cancel-edit').forEach(b => { b.style.display = 'none'; });
+  }
+  function cancelEdit() {
+    editing = false;
+    const bs = document.getElementById('btn-start');
+    bs.setAttribute('data-i18n', 'setup.btn.start');
+    bs.textContent = T('setup.btn.start');
+    hideCancelEdit();
+    setupView.classList.add('hidden');
+    tournamentView.classList.remove('hidden');
+    showTournament();
+  }
+  function openEditPlayers() {
+    if (!state) return;
+    editing = true;
+    editNamesPrefilled = false;
+    document.getElementById('t-name').value = state.name || '';
+    tDateInput.value = state.date || '';
+    tTimeInput.value = state.time || '';
+    document.getElementById('t-club').value = state.club || '';
+    document.getElementById('t-paylink').value = state.payLink || '';
+    document.getElementById('t-fee').value = state.fee || '';
+    document.getElementById('t-currency').value = state.currency || 'EUR';
+    document.getElementById('t-level').dataset.selected = (state.levels || []).join(',');
+    document.getElementById('t-duration').dataset.value = (state.durationHours != null ? String(state.durationHours) : '2');
+    if (window.PMI18N) PMI18N.initWidgets();
+    numPairsSel.value = state.teams.length;
+    matchPointsSel.value = state.matchPoints;
+    updateCourtsHint();
+    updateRoundsForPairs();
+    numRoundsSel.value = state.rounds;
+    const bs = document.getElementById('btn-start');
+    bs.setAttribute('data-i18n', 'setup.btn.saveEdit');
+    bs.textContent = T('setup.btn.saveEdit');
+    document.getElementById('setup-error').style.display = 'none';
+    step2Card.classList.add('hidden');
+    step1Card.classList.remove('hidden');
+    ensureCancelEdit();
+    tournamentView.classList.add('hidden');
+    setupView.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+  document.getElementById('btn-edit-players').addEventListener('click', openEditPlayers);
 
   // ---------- Tournament UI ----------
   const setupView = document.getElementById('setup-view');
@@ -943,6 +1040,8 @@
     const avgO = (oppSets.reduce((s, x) => s + x.size, 0) / P).toFixed(1);
     document.getElementById('variety-note').textContent =
       T('t.variety.team', { o: avgO, max: P - 1 });
+
+    updateEditBtn();
   }
 
   // ---------- Pair card (клик по имени пары в таблице лидеров) ----------
