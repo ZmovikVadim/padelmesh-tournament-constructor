@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="i18n.js"></script>
+<script src="pdf-export.js"></script>
 <style>
   /* Light palette from padelmesh.com */
   :root {
@@ -201,6 +202,20 @@
     font-size: 13px; font-weight: 500; line-height: 1.5;
   }
 
+  /* Golden point (разрешение ничьей в KOTC) */
+  .gp-box { margin-top: 14px; border-top: 1px dashed var(--color-black-10); padding-top: 12px; }
+  .gp-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .gp-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gp-btn {
+    flex: 1; min-width: 150px; padding: 9px 14px; border-radius: 14px;
+    border: 1px solid var(--color-black-10); background: var(--color-black-3);
+    color: var(--color-black); font-family: inherit; font-size: 13.5px; font-weight: 500;
+    cursor: pointer; transition: all .15s;
+  }
+  .gp-btn:hover { border-color: var(--color-orange); }
+  .gp-btn.sel { background: var(--color-light-green); border-color: var(--color-dark-green); color: var(--color-dark-green); font-weight: 600; }
+  .gp-btn:disabled { cursor: default; opacity: .7; }
+
   .stat-note { font-size: 12.5px; color: var(--color-black-60); margin-top: 10px; line-height: 1.5; }
   .error-msg { color: var(--color-orange); font-size: 14px; margin-top: 10px; display: none; }
   .hidden { display: none; }
@@ -231,7 +246,7 @@
     <p class="subtitle" id="setup-subtitle">Победители поднимаются, проигравшие спускаются — доберись до королевского корта</p>
 
     <div class="format-info" id="format-info">
-      <b>Как проходит King of the Court.</b> Корты ранжированы: первый — «королевский» 👑, последний — нижний. Первый раунд играется со случайной рассадкой. После каждого раунда победители поднимаются на корт выше, проигравшие спускаются ниже (с королевского корта победители не уходят, с нижнего проигравшие не опускаются), а пары внутри корта перемешиваются. Очки — <b>личные</b> и копятся в таблице, но итоговое место определяется кортом и результатом последнего раунда. Ничьи не допускаются. <b>Сетка следующего раунда генерируется после ввода всех результатов текущего.</b>
+      <b>Как проходит King of the Court.</b> Корты ранжированы: первый — «королевский» 👑, последний — нижний. Первый раунд играется со случайной рассадкой. После каждого раунда победители поднимаются на корт выше, проигравшие спускаются ниже (с королевского корта победители не уходят, с нижнего проигравшие не опускаются), а пары внутри корта перемешиваются. Очки — <b>личные</b> и копятся в таблице, но итоговое место определяется кортом и результатом последнего раунда. При ничьей команды разыгрывают <b>«золотое очко»</b> — один решающий мяч определяет, кто идёт вверх. <b>Сетка следующего раунда генерируется после ввода всех результатов текущего.</b>
     </div>
 
     <div class="card" id="step1-card">
@@ -342,8 +357,9 @@
       <h2 data-i18n="t.final.h2">Финальные результаты</h2>
       <div class="final-sub" id="final-sub"></div>
       <div id="podium-holder"></div>
-      <div style="padding-bottom: 16px;">
+      <div style="padding-bottom: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
         <button class="btn" id="btn-finish" data-i18n="t.btn.finish">🏁 Завершить турнир</button>
+        <button class="btn secondary" id="btn-pdf" data-i18n="pdf.btn">📄 Скачать PDF</button>
       </div>
     </div>
 
@@ -578,8 +594,9 @@
     const C = prev.length; // court 0 = королевский
     const winners = [], losers = [];
     prev.forEach((match, c) => {
-      const sc = state.scores[src + '-' + c];
-      const aWon = sc[0] > sc[1];
+      const key = src + '-' + c;
+      const sc = state.scores[key];
+      const aWon = sc[0] > sc[1] || (sc[0] === sc[1] && getTB(key) === 0);
       winners[c] = shuffle((aWon ? match.teamA : match.teamB).slice());
       losers[c] = shuffle((aWon ? match.teamB : match.teamA).slice());
     });
@@ -593,11 +610,25 @@
     return matches;
   }
 
-  function roundHasTie(r) {
-    return state.schedule[r].some((_, c) => {
-      const s = state.scores[r + '-' + c];
-      return s && s[0] !== null && s[0] === s[1];
-    });
+  // ---------- Ничьи и золотое очко ----------
+  // При равном счёте команды разыгрывают «золотое очко» — один решающий мяч.
+  // Победитель хранится в state.tiebreaks["round-court"] = 0 (teamA) | 1 (teamB).
+  function getTB(key) {
+    return state && state.tiebreaks ? state.tiebreaks[key] : undefined;
+  }
+  function setTB(key, v) {
+    if (!state.tiebreaks) state.tiebreaks = {};
+    if (v === undefined) delete state.tiebreaks[key];
+    else state.tiebreaks[key] = v;
+  }
+  function isTie(s) {
+    return !!s && s[0] !== null && s[1] !== null && s[0] === s[1];
+  }
+  function tieUnresolved(key) {
+    return isTie(state.scores[key]) && getTB(key) === undefined;
+  }
+  function roundHasUnresolvedTie(r) {
+    return state.schedule[r].some((_, c) => tieUnresolved(r + '-' + c));
   }
 
   function shuffle(arr) {
@@ -643,8 +674,9 @@
       players, courts, rounds,
       matchPoints: +matchPointsSel.value,
       schedule: [generateFirstRound(n)],
-      scores: {}, // "round-court" -> [scoreA, scoreB]
-      paid: {},   // playerIndex -> true; organizer-only, never shared
+      scores: {},    // "round-court" -> [scoreA, scoreB]
+      tiebreaks: {}, // "round-court" -> 0|1 — победитель золотого очка при ничьей
+      paid: {},      // playerIndex -> true; organizer-only, never shared
       currentRound: 0
     };
     if (editing) {
@@ -653,6 +685,7 @@
         newState.schedule = state.schedule;
         if (state.resting) newState.resting = state.resting;
         newState.scores = state.scores;
+        newState.tiebreaks = state.tiebreaks || {};
         newState.currentRound = state.currentRound;
       }
       newState.paid = state.paid || {};
@@ -800,8 +833,9 @@
   }
 
   function allComplete() {
+    // Турнир завершён, когда все счета введены и все ничьи разрешены золотым очком
     return state.schedule.length === state.rounds &&
-      state.schedule.every((_, r) => roundComplete(r));
+      state.schedule.every((_, r) => roundComplete(r) && !roundHasUnresolvedTie(r));
   }
 
   function renderTabs() {
@@ -903,6 +937,41 @@
     location.href = 'index.html';
   });
 
+  // ---------- Экспорт результатов в PDF (общий модуль pdf-export.js) ----------
+  PMPDF.bind('btn-pdf', () => {
+    const stats = computeStats();
+    const rounds = state.schedule.map((round, r) => ({
+      title: T('t.tab.round', { n: r + 1 }),
+      rows: round.map((match, c) => {
+        const key = r + '-' + c;
+        const sc = state.scores[key];
+        const has = sc && sc[0] !== null && sc[1] !== null;
+        const tb = has && isTie(sc) ? getTB(key) : undefined;
+        const nm = t => t.map(p => state.players[p]).join(' + ');
+        return {
+          court: (c === 0 ? '👑 ' : '') + courtName(c),
+          left: nm(match.teamA),
+          right: nm(match.teamB),
+          score: has ? sc[0] + ':' + sc[1] : '—',
+          leftWon: has && (sc[0] > sc[1] || tb === 0),
+          rightWon: has && (sc[1] > sc[0] || tb === 1),
+          note: tb !== undefined ? '🟡 ' + T('pdf.gp') : ''
+        };
+      })
+    }));
+    return {
+      fileName: PMPDF.fileName(state.name || defaultTitle(), state.date),
+      badge: fname(),
+      title: state.name || defaultTitle(),
+      subtitle: buildSubtitle(),
+      playerTh: T('t.lb.th.player'),
+      top3: stats.slice(0, 3),
+      standings: stats,
+      rounds,
+      footer: T('pdf.footer', { date: formatDate(state.date) || new Date().toLocaleDateString() })
+    };
+  });
+
   function renderRound() {
     const finalBlock = document.getElementById('final-block');
     if (state.currentRound === 'final' || (readOnly && allComplete())) {
@@ -955,12 +1024,57 @@
       vsBlock.appendChild(inA); vsBlock.appendChild(vs); vsBlock.appendChild(inB);
 
       function markWinners() {
-        inA.classList.toggle('winner', sc[0] !== null && sc[1] !== null && sc[0] > sc[1]);
-        inB.classList.toggle('winner', sc[0] !== null && sc[1] !== null && sc[1] > sc[0]);
+        const tb = isTie(sc) ? getTB(key) : undefined;
+        inA.classList.toggle('winner', sc[0] !== null && sc[1] !== null && (sc[0] > sc[1] || tb === 0));
+        inB.classList.toggle('winner', sc[0] !== null && sc[1] !== null && (sc[1] > sc[0] || tb === 1));
       }
       markWinners();
 
       if (readOnly) { inA.disabled = true; inB.disabled = true; }
+
+      // Золотое очко: при ничьей организатор отмечает победителя решающего розыгрыша
+      const gpBox = document.createElement('div');
+      gpBox.className = 'gp-box hidden';
+
+      function refreshGP() {
+        const tie = isTie(sc);
+        gpBox.classList.toggle('hidden', !tie);
+        gpBox.innerHTML = '';
+        if (!tie) return;
+        const tb = getTB(key);
+        const title = document.createElement('div');
+        title.className = 'gp-title';
+        title.textContent = T('kotc.gp.title');
+        gpBox.appendChild(title);
+        const btns = document.createElement('div');
+        btns.className = 'gp-btns';
+        [match.teamA, match.teamB].forEach((team, ti) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'gp-btn' + (tb === ti ? ' sel' : '');
+          b.textContent = (tb === ti ? '🏆 ' : '') + team.map(p => state.players[p]).join(' + ');
+          if (readOnly) {
+            b.disabled = true;
+          } else {
+            b.addEventListener('click', () => {
+              const wasComplete = allComplete();
+              setTB(key, ti);
+              save();
+              refreshGP();
+              markWinners();
+              renderTabs(); renderLeaderboard(); refreshNextRoundBox(); refreshRegenBox();
+              if (wasComplete !== allComplete()) renderRound();
+            });
+          }
+          btns.appendChild(b);
+        });
+        gpBox.appendChild(btns);
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = tb === undefined ? T('kotc.gp.hint') : T('kotc.gp.done');
+        gpBox.appendChild(hint);
+      }
+      refreshGP();
 
       function onInput(src, other, idx) {
         // Validation: score must be an integer 0..matchPoints; the two
@@ -973,7 +1087,8 @@
           sc[idx] = null; sc[1 - idx] = null;
           other.value = '';
           state.scores[key] = sc;
-          markWinners();
+          setTB(key, undefined);
+          markWinners(); refreshGP();
           save(); renderTabs(); renderLeaderboard(); refreshNextRoundBox(); refreshRegenBox();
           return;
         }
@@ -989,7 +1104,9 @@
           other.value = '';
         }
         state.scores[key] = sc;
+        setTB(key, undefined); // счёт изменился — прежнее золотое очко неактуально
         markWinners();
+        refreshGP();
         save();
         renderTabs();
         renderLeaderboard();
@@ -1003,6 +1120,7 @@
 
       m.appendChild(teamA); m.appendChild(vsBlock); m.appendChild(teamB);
       card.appendChild(m);
+      card.appendChild(gpBox);
       roundsContainer.appendChild(card);
     });
 
@@ -1060,7 +1178,7 @@
       box.remove();
       return;
     }
-    if (roundComplete(r) && roundHasTie(r)) {
+    if (roundComplete(r) && roundHasUnresolvedTie(r)) {
       box.innerHTML = '<div class="warn-note">' + T('kotc.noDraw') + '</div>';
       return;
     }
@@ -1101,8 +1219,9 @@
       round.forEach((match, c) => {
         const sc = state.scores[r + '-' + c];
         if (!sc || sc[0] === null || sc[1] === null) return;
-        match.teamA.forEach(p => { stats[p].pts += sc[0]; stats[p].games++; if (sc[0] > sc[1]) stats[p].wins++; });
-        match.teamB.forEach(p => { stats[p].pts += sc[1]; stats[p].games++; if (sc[1] > sc[0]) stats[p].wins++; });
+        const tb = isTie(sc) ? getTB(r + '-' + c) : undefined;
+        match.teamA.forEach(p => { stats[p].pts += sc[0]; stats[p].games++; if (sc[0] > sc[1] || tb === 0) stats[p].wins++; });
+        match.teamB.forEach(p => { stats[p].pts += sc[1]; stats[p].games++; if (sc[1] > sc[0] || tb === 1) stats[p].wins++; });
       });
     });
     if (allComplete()) {
@@ -1112,7 +1231,8 @@
       const place = {};
       state.schedule[lastR].forEach((match, c) => {
         const sc = state.scores[lastR + '-' + c];
-        const aFlag = sc[0] > sc[1] ? 0 : (sc[0] < sc[1] ? 1 : 0.5);
+        const tb = isTie(sc) ? getTB(lastR + '-' + c) : undefined;
+        const aFlag = sc[0] > sc[1] ? 0 : (sc[0] < sc[1] ? 1 : (tb === 0 ? 0 : (tb === 1 ? 1 : 0.5)));
         match.teamA.forEach(p => place[p] = [c, aFlag]);
         match.teamB.forEach(p => place[p] = [c, 1 - aFlag]);
       });
@@ -1196,10 +1316,13 @@
         const has = sc && sc[0] !== null && sc[1] !== null;
         const myScore = has ? (inA ? sc[0] : sc[1]) : null;
         const opScore = has ? (inA ? sc[1] : sc[0]) : null;
+        const tb = has && sc[0] === sc[1] ? getTB(r + '-' + c) : undefined;
+        const myGpWin = tb !== undefined && ((tb === 0) === inA);
         found = {
           court: c, partner: partner, opp: opp,
           myScore: myScore, opScore: opScore,
-          result: has ? (myScore > opScore ? 'win' : (myScore < opScore ? 'loss' : 'draw')) : null,
+          result: has ? (myScore > opScore ? 'win' : (myScore < opScore ? 'loss'
+            : (tb === undefined ? 'draw' : (myGpWin ? 'gpwin' : 'gploss')))) : null,
           pts: has ? myScore : null
         };
       });
@@ -1236,10 +1359,13 @@
           '<td class="rp-pts">' + (row.pts !== null ? '+' + row.pts : '—') + '</td></tr>';
         return;
       }
-      const resCls = row.result === 'win' ? 'rp-win' : (row.result === 'loss' ? 'rp-loss' : '');
+      const resCls = (row.result === 'win' || row.result === 'gpwin') ? 'rp-win'
+        : ((row.result === 'loss' || row.result === 'gploss') ? 'rp-loss' : '');
       const resTxt = row.result === 'win' ? T('card.result.win')
         : (row.result === 'loss' ? T('card.result.loss')
-        : (row.result === 'draw' ? T('card.result.draw') : '—'));
+        : (row.result === 'gpwin' ? T('card.result.gpWin')
+        : (row.result === 'gploss' ? T('card.result.gpLoss')
+        : (row.result === 'draw' ? T('card.result.draw') : '—'))));
       html += '<tr>' +
         '<td>' + T('t.tab.round', { n: row.round + 1 }) + '</td>' +
         '<td>' + esc(courtName(row.court)) + '</td>' +
@@ -1265,7 +1391,7 @@
       levels: state.levels || [], fee: state.fee || '', currency: state.currency || 'EUR', durationHours: state.durationHours || null,
       players: state.players, courts: state.courts, rounds: state.rounds,
       matchPoints: state.matchPoints, schedule: state.schedule,
-      scores: state.scores, currentRound: 0
+      scores: state.scores, tiebreaks: state.tiebreaks || {}, currentRound: 0
     };
   }
 
@@ -1303,6 +1429,7 @@
     if (!confirm(T('confirm.restart'))) return;
     state.schedule = [generateFirstRound(state.players.length)];
     state.scores = {};
+    state.tiebreaks = {};
     state.currentRound = 0;
     save();
     showTournament();
@@ -1339,6 +1466,7 @@
         state.schedule.pop();
         if (state.resting) state.resting.pop();
         Object.keys(state.scores).forEach(k => { if (k.indexOf(lastIdx + '-') === 0) delete state.scores[k]; });
+        if (state.tiebreaks) Object.keys(state.tiebreaks).forEach(k => { if (k.indexOf(lastIdx + '-') === 0) delete state.tiebreaks[k]; });
         state.rounds = state.schedule.length;
       } else {
         state.rounds -= 1;

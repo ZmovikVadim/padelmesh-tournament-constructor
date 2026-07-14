@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="i18n.js"></script>
+<script src="pdf-export.js"></script>
 <style>
   /* Light palette from padelmesh.com */
   :root {
@@ -339,8 +340,9 @@
       <h2 data-i18n="t.final.h2">Финальные результаты</h2>
       <div class="final-sub" id="final-sub"></div>
       <div id="podium-holder"></div>
-      <div style="padding-bottom: 16px;">
+      <div style="padding-bottom: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
         <button class="btn" id="btn-finish" data-i18n="t.btn.finish">🏁 Завершить турнир</button>
+        <button class="btn secondary" id="btn-pdf" data-i18n="pdf.btn">📄 Скачать PDF</button>
       </div>
     </div>
 
@@ -884,6 +886,37 @@
     save();
     await pushApi(); // flush to SQLite BEFORE leaving, otherwise the debounced push is lost
     location.href = 'index.html';
+  });
+
+  // ---------- Экспорт результатов в PDF (общий модуль pdf-export.js) ----------
+  PMPDF.bind('btn-pdf', () => {
+    const stats = computeStats();
+    const rounds = state.schedule.map((round, r) => ({
+      title: T('t.tab.round', { n: r + 1 }),
+      rows: round.map((match, c) => {
+        const sc = state.scores[r + '-' + c];
+        const has = sc && sc[0] !== null && sc[1] !== null;
+        return {
+          court: courtName(c),
+          left: teamLabel(match.a),
+          right: teamLabel(match.b),
+          score: has ? sc[0] + ':' + sc[1] : '—',
+          leftWon: has && sc[0] > sc[1],
+          rightWon: has && sc[1] > sc[0]
+        };
+      })
+    }));
+    return {
+      fileName: PMPDF.fileName(state.name || defaultTitle(), state.date),
+      badge: fname(),
+      title: state.name || defaultTitle(),
+      subtitle: buildSubtitle(),
+      playerTh: T('t.lb.th.pair'),
+      top3: stats.slice(0, 3),
+      standings: stats,
+      rounds,
+      footer: T('pdf.footer', { date: formatDate(state.date) || new Date().toLocaleDateString() })
+    };
   });
 
   function renderRound() {

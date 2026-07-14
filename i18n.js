@@ -233,7 +233,20 @@
       'prog.next.teamMexicano': 'Следующий раунд будет собран по таблице пар: на первом корте — пары с 1-го и 2-го мест, дальше 3-е и 4-е и т.д.',
       'prog.next.mixicano': 'Следующий раунд будет собран по таблице: лучшие двое мужчин и лучшие две женщины — на первом корте (кросс-пары: 1-й мужчина со 2-й женщиной против 2-го мужчины с 1-й женщиной), дальше следующая четвёрка и т.д.',
       'prog.next.kotc': 'Победители поднимутся на корт выше, проигравшие спустятся ниже, пары внутри кортов перемешаются.',
-      'kotc.noDraw': '⚠️ В King of the Court ничьи не допускаются — без победителя нельзя распределить игроков по кортам. Скорректируйте счёт.',
+      'kotc.noDraw': '⚠️ Есть корты с ничейным счётом. Разыграйте «золотое очко» и отметьте победителя решающего розыгрыша на каждом таком корте — без этого нельзя распределить игроков.',
+      'kotc.gp.title': '🟡 Ничья — золотое очко. Кто выиграл решающий розыгрыш?',
+      'kotc.gp.hint': 'Команды разыгрывают один решающий мяч. Его победитель поднимается на корт выше.',
+      'kotc.gp.done': 'Победитель золотого очка отмечен. При необходимости выбор можно изменить.',
+      'card.result.gpWin': 'Победа (зол. очко)',
+      'card.result.gpLoss': 'Поражение (зол. очко)',
+
+      /* экспорт в PDF */
+      'pdf.btn': '📄 Скачать PDF',
+      'pdf.generating': '⏳ Готовим PDF…',
+      'pdf.error': 'Не удалось создать PDF. Проверьте подключение к интернету и попробуйте ещё раз.',
+      'pdf.gp': 'золотое очко',
+      'pdf.roundsTitle': 'Результаты по раундам',
+      'pdf.footer': 'Сгенерировано в Padelmesh · {date}',
 
       /* round robin */
       'rr.info': 'Круговой турнир: каждая пара сыграет с каждой ровно один раз ({opp} соперников).',
@@ -454,7 +467,20 @@
       'prog.next.teamMexicano': 'The next round is built from the pair standings: court 1 gets the 1st- and 2nd-placed pairs, then 3rd and 4th, and so on.',
       'prog.next.mixicano': 'The next round is built from the standings: the top two men and top two women meet on court 1 (cross pairs: 1st man with 2nd woman vs 2nd man with 1st woman), then the next four, and so on.',
       'prog.next.kotc': 'Winners move up a court, losers move down, and pairs within each court are reshuffled.',
-      'kotc.noDraw': "⚠️ Draws aren't allowed in King of the Court — without a winner players can't be moved between courts. Adjust the score.",
+      'kotc.noDraw': '⚠️ Some courts have a tied score. Play a golden point and mark the winner of the deciding rally on each tied court — players can\'t be moved otherwise.',
+      'kotc.gp.title': '🟡 Tie — golden point. Who won the deciding rally?',
+      'kotc.gp.hint': 'The teams play one deciding rally. Its winner moves up a court.',
+      'kotc.gp.done': 'Golden point winner marked. You can change the choice if needed.',
+      'card.result.gpWin': 'Win (golden point)',
+      'card.result.gpLoss': 'Loss (golden point)',
+
+      /* PDF export */
+      'pdf.btn': '📄 Download PDF',
+      'pdf.generating': '⏳ Preparing PDF…',
+      'pdf.error': 'Failed to create the PDF. Check your internet connection and try again.',
+      'pdf.gp': 'golden point',
+      'pdf.roundsTitle': 'Results by round',
+      'pdf.footer': 'Generated with Padelmesh · {date}',
 
       'rr.info': 'Round robin: every pair plays every other exactly once ({opp} opponents).',
 
@@ -673,7 +699,20 @@
       'prog.next.teamMexicano': 'La siguiente ronda se arma según la clasificación de parejas: la pista 1 reúne las parejas 1ª y 2ª, luego 3ª y 4ª, etc.',
       'prog.next.mixicano': 'La siguiente ronda se arma según la clasificación: los dos mejores hombres y las dos mejores mujeres en la pista 1 (parejas cruzadas: 1º hombre con 2ª mujer contra 2º hombre con 1ª mujer), luego el siguiente grupo de cuatro, etc.',
       'prog.next.kotc': 'Los ganadores suben una pista, los perdedores bajan y las parejas de cada pista se reorganizan.',
-      'kotc.noDraw': '⚠️ En King of the Court no se permiten empates: sin ganador no se puede distribuir a los jugadores por pistas. Ajusta el marcador.',
+      'kotc.noDraw': '⚠️ Hay pistas con marcador empatado. Jugad un punto de oro y marca al ganador del punto decisivo en cada pista empatada; sin esto no se puede distribuir a los jugadores.',
+      'kotc.gp.title': '🟡 Empate — punto de oro. ¿Quién ganó el punto decisivo?',
+      'kotc.gp.hint': 'Los equipos juegan un punto decisivo. Su ganador sube una pista.',
+      'kotc.gp.done': 'Ganador del punto de oro marcado. Puedes cambiar la elección si hace falta.',
+      'card.result.gpWin': 'Victoria (punto de oro)',
+      'card.result.gpLoss': 'Derrota (punto de oro)',
+
+      /* exportación a PDF */
+      'pdf.btn': '📄 Descargar PDF',
+      'pdf.generating': '⏳ Preparando el PDF…',
+      'pdf.error': 'No se pudo crear el PDF. Comprueba tu conexión a internet e inténtalo de nuevo.',
+      'pdf.gp': 'punto de oro',
+      'pdf.roundsTitle': 'Resultados por ronda',
+      'pdf.footer': 'Generado con Padelmesh · {date}',
 
       'rr.info': 'Round robin: cada pareja juega contra todas las demás exactamente una vez ({opp} rivales).',
 
@@ -755,7 +794,7 @@
       },
       'king-of-the-court': {
         subtitle: 'Победители поднимаются, проигравшие спускаются — доберись до королевского корта',
-        info: '<b>Как проходит King of the Court.</b> Корты ранжированы: первый — «королевский» 👑, последний — нижний. Первый раунд играется со случайной рассадкой. После каждого раунда победители поднимаются на корт выше, проигравшие спускаются ниже (с королевского корта победители не уходят, с нижнего проигравшие не опускаются), а пары внутри корта перемешиваются. Очки — <b>личные</b> и копятся в таблице, но итоговое место определяется кортом и результатом последнего раунда. Ничьи не допускаются.',
+        info: '<b>Как проходит King of the Court.</b> Корты ранжированы: первый — «королевский» 👑, последний — нижний. Первый раунд играется со случайной рассадкой. После каждого раунда победители поднимаются на корт выше, проигравшие спускаются ниже (с королевского корта победители не уходят, с нижнего проигравшие не опускаются), а пары внутри корта перемешиваются. Очки — <b>личные</b> и копятся в таблице, но итоговое место определяется кортом и результатом последнего раунда. При ничьей команды разыгрывают <b>«золотое очко»</b> — один решающий мяч определяет, кто идёт вверх.',
         rules: 'Корты ранжированы от нижнего до верхнего — «королевского». После каждого раунда победители поднимаются на корт выше, проигравшие спускаются ниже, а пары внутри корта перемешиваются. Цель — пробиться на королевский корт и удержаться там до финального свистка: итоговое место определяется кортом и результатом последнего раунда. Азартный формат с постоянным движением.',
         meta: 'Личный зачёт · от 8 игроков, кратно 4'
       },
@@ -805,7 +844,7 @@
       },
       'king-of-the-court': {
         subtitle: "Winners move up, losers move down — reach the king's court",
-        info: "<b>How King of the Court works.</b> Courts are ranked: the first is the «king's» court 👑, the last is the bottom one. The first round uses a random layout. After each round winners move up a court and losers move down (winners never leave the king's court, losers never drop below the bottom one), and pairs within a court are reshuffled. Points are <b>individual</b> and accumulate in the standings, but the final placing is decided by your court and the result of the last round. Draws are not allowed.",
+        info: "<b>How King of the Court works.</b> Courts are ranked: the first is the «king's» court 👑, the last is the bottom one. The first round uses a random layout. After each round winners move up a court and losers move down (winners never leave the king's court, losers never drop below the bottom one), and pairs within a court are reshuffled. Points are <b>individual</b> and accumulate in the standings, but the final placing is decided by your court and the result of the last round. On a tie the teams play a <b>golden point</b> — one deciding rally settles who moves up.",
         rules: "Courts are ranked from the bottom up to the «king's» court. After each round winners move up a court, losers move down, and pairs within a court are reshuffled. The goal is to break through to the king's court and hold it to the final whistle: your final place is decided by your court and the result of the last round. A thrilling format with constant movement.",
         meta: 'Individual scoring · 8+ players, multiple of 4'
       },
@@ -855,7 +894,7 @@
       },
       'king-of-the-court': {
         subtitle: 'Los ganadores suben, los perdedores bajan: llega a la pista del rey',
-        info: '<b>Cómo funciona el King of the Court.</b> Las pistas están jerarquizadas: la primera es la pista del «rey» 👑, la última es la más baja. La primera ronda usa una distribución aleatoria. Tras cada ronda los ganadores suben una pista y los perdedores bajan (los ganadores no dejan la pista del rey y los perdedores no bajan de la última), y las parejas de cada pista se reorganizan. Los puntos son <b>individuales</b> y se acumulan en la clasificación, pero el puesto final lo deciden tu pista y el resultado de la última ronda. No se permiten empates.',
+        info: '<b>Cómo funciona el King of the Court.</b> Las pistas están jerarquizadas: la primera es la pista del «rey» 👑, la última es la más baja. La primera ronda usa una distribución aleatoria. Tras cada ronda los ganadores suben una pista y los perdedores bajan (los ganadores no dejan la pista del rey y los perdedores no bajan de la última), y las parejas de cada pista se reorganizan. Los puntos son <b>individuales</b> y se acumulan en la clasificación, pero el puesto final lo deciden tu pista y el resultado de la última ronda. En caso de empate los equipos juegan un <b>punto de oro</b>: un punto decisivo determina quién sube.',
         rules: 'Las pistas se jerarquizan de la más baja a la más alta, la pista del «rey». Tras cada ronda los ganadores suben una pista, los perdedores bajan y las parejas de cada pista se reorganizan. El objetivo es abrirse paso hasta la pista del rey y mantenerse allí hasta el pitido final: tu puesto final lo deciden tu pista y el resultado de la última ronda. Un formato emocionante y en constante movimiento.',
         meta: 'Puntuación individual · 8+ jugadores, múltiplo de 4'
       },
